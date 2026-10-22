@@ -1,10 +1,46 @@
-# ElettroSim
+<p align="center"><img src="icon.svg" width="72" alt=""></p>
 
-Editor e simulatore di schemi elettrici in un unico file (`index.html`).
+<h1 align="center">ElettroSim</h1>
 
-## Attivare gli account Google (salvataggio online)
+<p align="center"><b>Disegna e simula schemi elettrici direttamente nel browser, anche da telefono.</b><br>
+Impianti civili e industriali, PLC in ladder, GRAFCET, logica digitale e pneumatica.</p>
 
-Senza configurazione tutto viene salvato solo nel browser. Per permettere agli utenti di accedere con Google e ritrovare schemi e blocchi su qualsiasi dispositivo:
+<p align="center"><a href="https://mattcoc.github.io/ElettroSim/"><b>▶ Apri ElettroSim</b></a></p>
+
+<p align="center"><img src="docs/desktop.png" width="760" alt="ElettroSim su computer"> <img src="docs/mobile.png" width="200" alt="ElettroSim su telefono"></p>
+
+## Cosa puoi fare
+
+- **Disegnare schemi** con oltre 150 simboli: alimentazioni, fusibili, magnetotermici, contattori, relè termici, motori, variatori, pulsanti, sensori, lampade, PLC, ladder, GRAFCET, pneumatica e vista del quadro.
+- **Simulare il circuito**: premi *Simula* e aziona pulsanti, interruttori e sensori. I cavi in tensione si colorano, bobine e motori si attivano, temporizzatori e contatori funzionano.
+- **Verificare lo schema**: il controllo segnala morsetti scollegati, sigle duplicate, cortocircuiti e altri errori.
+- **Più fogli** collegati tra loro: elementi con la stessa sigla lavorano insieme anche su fogli diversi.
+- **Esportare** in PDF, PNG o SVG, con cartiglio compilabile.
+- **Salvare** nel browser, su file `.json` oppure **nel tuo account Google**, per ritrovare gli schemi su ogni dispositivo.
+- **Esempi pronti**: avviamento diretto, inversione di marcia, stella-triangolo, PLC, GRAFCET, porte logiche, variatore di frequenza.
+
+## Come si usa
+
+1. Scegli un simbolo dalla libreria **Componenti**: cliccalo e poi clicca sul foglio, oppure trascinalo.
+2. Collega i morsetti: clicca su un morsetto e poi su un altro.
+3. Dai le sigle nel pannello **Proprietà** (la bobina KM1 comanda tutti i contatti KM1).
+4. Premi **Verifica**, poi **Simula**.
+
+Il pulsante **?** (o il tasto F1) apre la guida con tutte le scorciatoie da tastiera. Sul telefono gli strumenti sono nella barra in basso; dal menu del browser puoi scegliere *Aggiungi a schermata Home* per usarla come un'app.
+
+## Struttura del progetto
+
+Tutta l'applicazione è nel file `index.html`, senza dipendenze da installare. Il sito è pubblicato con GitHub Pages dal branch `main`: ogni push aggiorna il sito in un paio di minuti.
+
+| File | Contenuto |
+| --- | --- |
+| `index.html` | L'applicazione completa (interfaccia, simboli, simulatore) |
+| `manifest.webmanifest`, `icon*.png`, `icon.svg` | Icona e installazione sul telefono |
+| `docs/` | Immagini del README |
+
+## Configurare gli account Google (Firebase)
+
+Gli account sono già collegati al progetto Firebase `elettrosim-19adf`. Per usare un progetto diverso, o per rifare la configurazione da zero, e permettere agli utenti di accedere con Google e ritrovare schemi e blocchi su qualsiasi dispositivo:
 
 1. Vai su <https://console.firebase.google.com>, crea un progetto (Google Analytics non serve).
 2. **Authentication** › Inizia › metodo di accesso **Google** › Attiva › Salva.

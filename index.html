@@ -1,10 +1,19 @@
-<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
-<title>ElettroSim</title>
-<meta name="description" content="Disegna e simula schemi elettrici, PLC, GRAFCET e pneumatica nel browser.">
-<meta name="claude:viewport-fit-sides" content="cover">
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style>
+<title>ElettroSim – simulatore di schemi elettrici</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Condensed:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<meta name="description" content="Disegna e simula schemi elettrici, PLC, GRAFCET e pneumatica nel browser, anche da telefono.">
+<meta name="theme-color" content="#e9edf0" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#12171b" media="(prefers-color-scheme: dark)">
+<meta property="og:title" content="ElettroSim">
+<meta property="og:description" content="Disegna e simula schemi elettrici, PLC, GRAFCET e pneumatica nel browser.">
+<meta property="og:type" content="website">
+<meta property="og:image" content="https://mattcoc.github.io/ElettroSim/docs/desktop.png">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="manifest" href="manifest.webmanifest">
+</head><body>
 <style>
 /* Layout: workbench a tre colonne (libreria | foglio | proprietà) dentro una cornice, barra comandi sopra, barra di stato sotto */
 :root{
@@ -236,6 +245,10 @@ details.cat.recent summary .t{color:var(--accent)}
 @keyframes tin{from{opacity:0;transform:translateY(6px)}}
 .mobtoggle{display:none}
 
+.dock{display:contents}
+@media (min-width:861px){
+  .spacer{order:1}.dock .sim-only{order:2}.spacer~*{order:3}
+}
 @media (max-width:1100px){.main{grid-template-columns:210px minmax(0,1fr) 250px}}
 @media (max-width:860px){
   .main{grid-template-columns:minmax(0,1fr)}
@@ -243,12 +256,33 @@ details.cat.recent summary .t{color:var(--accent)}
   #lib{left:max(16px,env(safe-area-inset-left,0px));transform:translateX(calc(-100% - 40px))}
   #propsPanel{right:max(16px,env(safe-area-inset-right,0px));transform:translateX(calc(100% + 40px))}
   #lib.open,#propsPanel.open{transform:none}
-  .bar{flex-wrap:wrap;overflow:visible}
+  body{padding-left:max(10px,env(safe-area-inset-left,0px));padding-right:max(10px,env(safe-area-inset-right,0px))}
+  .app{padding-bottom:calc(66px + env(safe-area-inset-bottom,0px));gap:6px}
+  .bar{gap:5px}
+  .bar .caret{display:none}
+  .bar .btn{padding:0 8px}.bar .btn.ico{padding:0}
+  .simbtn{padding:0 12px}
+  .status{display:none}
+  .dock{position:fixed;left:max(10px,env(safe-area-inset-left,0px));right:max(10px,env(safe-area-inset-right,0px));bottom:calc(8px + env(safe-area-inset-bottom,0px));z-index:30;display:flex;align-items:center;gap:2px;padding:4px;background:var(--panel);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow)}
+  .dock .grp{display:contents}
+  .dock .grp[hidden]{display:none}
+  .dock .btn,.dock .btn.ico{flex:1 1 0;min-width:0;width:auto;height:44px;padding:0;justify-content:center;gap:2px}
+  .dock #tDraw svg:last-child{display:none}
+  .dock label.btn{flex:none;padding:0 4px;font-size:12px}
+  .dock select.sel{flex:none;height:38px}
+  .selacts,.zoomgrp{position:fixed;bottom:calc(118px + env(safe-area-inset-bottom,0px));z-index:30;box-shadow:var(--shadow);padding:3px}
+  .selacts{left:50%;transform:translateX(-50%)}
+  .zoomgrp{right:max(16px,env(safe-area-inset-right,0px))}
+  body:not(.has-sel) .selacts{display:none}
+  .selacts .btn.ico,.zoomgrp .btn.ico{width:42px;height:42px}
+  .hint{bottom:auto;top:10px;right:10px;left:10px;max-width:none}
+  .simtag{top:auto;bottom:12px;left:12px;right:auto}
   .closep{display:inline-flex}
   .mobtoggle{display:inline-flex}
   .hide-sm{display:none!important}
   .brand{display:none}
-  .toasts{bottom:calc(80px + env(safe-area-inset-bottom,0px))}
+  .toasts{bottom:calc(172px + env(safe-area-inset-bottom,0px))}
+  .tiles{grid-template-columns:repeat(3,minmax(0,1fr))}
   .libtip{display:none}
 }
 @media (pointer:coarse){
@@ -266,13 +300,13 @@ details.cat.recent summary .t{color:var(--accent)}
       <div class="brand-mark" aria-hidden="true"><svg viewBox="0 0 20 20"><path d="M3 10h4l2-5 3 10 2-5h3" fill="none" stroke="#f0a36c" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
       <b>ElettroSim</b>
     </div>
-    <button class="btn ico mobtoggle" id="bLib" title="Componenti"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></button>
-    <button class="btn ico mobtoggle" id="bProps" title="Proprietà"><svg viewBox="0 0 24 24"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg></button>
     <div class="grp">
-      <button class="btn" id="bFile">File <svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></button>
-      <button class="btn" id="bEx">Esempi <svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></button>
-      <button class="btn ico" id="bHelp" title="Guida e scorciatoie (F1)" aria-label="Guida e scorciatoie"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 114 2c-.9.6-1.5 1.1-1.5 2.2"/><path d="M12 17h.01"/></svg></button>
+      <button class="btn" id="bFile">File <svg class="caret" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></button>
+      <button class="btn" id="bEx">Esempi <svg class="caret" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></button>
+      <button class="btn ico hide-sm" id="bHelp" title="Guida e scorciatoie (F1)" aria-label="Guida e scorciatoie"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 114 2c-.9.6-1.5 1.1-1.5 2.2"/><path d="M12 17h.01"/></svg></button>
     </div>
+    <div class="dock" id="dock">
+    <button class="btn ico mobtoggle" id="bLib" title="Componenti" aria-label="Componenti"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></button>
     <div class="grp edit-only">
       <button class="btn ico" id="bUndo" title="Annulla (Ctrl+Z)"><svg viewBox="0 0 24 24"><path d="M9 14L4 9l5-5"/><path d="M4 9h10a6 6 0 010 12h-3"/></svg></button>
       <button class="btn ico" id="bRedo" title="Ripeti (Ctrl+Y)"><svg viewBox="0 0 24 24"><path d="M15 14l5-5-5-5"/><path d="M20 9H10a6 6 0 000 12h3"/></svg></button>
@@ -283,21 +317,6 @@ details.cat.recent summary .t{color:var(--accent)}
       <button class="btn" id="tText" title="Testo (T)"><svg viewBox="0 0 24 24"><path d="M5 6V4h14v2M12 4v16M9 20h6"/></svg><span class="hide-sm">Testo</span></button>
       <button class="btn" id="tDraw" title="Disegno: linee, forme e immagini"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="10" height="8" rx="1"/><circle cx="16" cy="16" r="5"/></svg><span class="hide-sm">Disegna</span><svg viewBox="0 0 24 24" style="width:13px"><path d="M6 9l6 6 6-6"/></svg></button>
     </div>
-    <div class="grp edit-only">
-      <button class="btn ico" id="bRot" title="Ruota 90° (R)"><svg viewBox="0 0 24 24"><path d="M20 12a8 8 0 11-3-6.2"/><path d="M20 4v5h-5"/></svg></button>
-      <button class="btn ico" id="bFlip" title="Specchia (M)"><svg viewBox="0 0 24 24"><path d="M12 3v18"/><path d="M8 7L3 17h5zM16 7l5 10h-5z"/></svg></button>
-      <button class="btn ico" id="bDel" title="Elimina (Canc)"><svg viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></svg></button>
-    </div>
-    <div class="grp">
-      <button class="btn ico hide-sm" id="bZo" title="Riduci"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M8 11h6M20 20l-4-4"/></svg></button>
-      <span class="zoomv hide-sm" id="zoomv">100%</span>
-      <button class="btn ico hide-sm" id="bZi" title="Ingrandisci"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M8 11h6M11 8v6M20 20l-4-4"/></svg></button>
-      <button class="btn ico" id="bFit" title="Adatta al foglio (0)"><svg viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button>
-    </div>
-    <div class="spacer"></div>
-    <div class="grp edit-only">
-      <button class="btn" id="bCheck" title="Verifica lo schema"><svg viewBox="0 0 24 24"><path d="M4 12l5 5L20 6"/></svg><span class="hide-sm">Verifica</span><span class="badge ok" id="chkBadge">0</span></button>
-    </div>
     <div class="grp sim-only" hidden>
       <button class="btn" id="bPause" title="Pausa (P)"><svg viewBox="0 0 24 24"><path d="M9 5v14M15 5v14"/></svg><span>Pausa</span></button>
       <button class="btn" id="bStep" title="Avanza di 0,1 s (N)"><svg viewBox="0 0 24 24"><path d="M6 5l9 7-9 7zM18 5v14"/></svg><span class="hide-sm">Passo</span></button>
@@ -307,6 +326,23 @@ details.cat.recent summary .t{color:var(--accent)}
       <select class="sel" id="speed" title="Velocità dei temporizzatori">
         <option value="0.25">×0,25</option><option value="0.5">×0,5</option><option value="1" selected>×1</option><option value="2">×2</option><option value="5">×5</option><option value="10">×10</option>
       </select>
+    </div>
+    <button class="btn ico mobtoggle" id="bProps" title="Proprietà" aria-label="Proprietà"><svg viewBox="0 0 24 24"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg></button>
+    </div>
+    <div class="grp edit-only selacts">
+      <button class="btn ico" id="bRot" title="Ruota 90° (R)"><svg viewBox="0 0 24 24"><path d="M20 12a8 8 0 11-3-6.2"/><path d="M20 4v5h-5"/></svg></button>
+      <button class="btn ico" id="bFlip" title="Specchia (M)"><svg viewBox="0 0 24 24"><path d="M12 3v18"/><path d="M8 7L3 17h5zM16 7l5 10h-5z"/></svg></button>
+      <button class="btn ico" id="bDel" title="Elimina (Canc)"><svg viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></svg></button>
+    </div>
+    <div class="grp zoomgrp">
+      <button class="btn ico hide-sm" id="bZo" title="Riduci"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M8 11h6M20 20l-4-4"/></svg></button>
+      <span class="zoomv hide-sm" id="zoomv">100%</span>
+      <button class="btn ico hide-sm" id="bZi" title="Ingrandisci"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M8 11h6M11 8v6M20 20l-4-4"/></svg></button>
+      <button class="btn ico" id="bFit" title="Adatta al foglio (0)"><svg viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button>
+    </div>
+    <div class="spacer"></div>
+    <div class="grp edit-only">
+      <button class="btn" id="bCheck" title="Verifica lo schema"><svg viewBox="0 0 24 24"><path d="M4 12l5 5L20 6"/></svg><span class="hide-sm">Verifica</span><span class="badge ok" id="chkBadge">0</span></button>
     </div>
     <button class="btn acc" id="bAcc" title="Account" hidden><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0116 0"/></svg><span class="hide-sm" id="accName">Accedi</span></button>
     <button class="simbtn" id="bSim" title="Avvia o ferma la simulazione (F9)"><svg viewBox="0 0 24 24"><path d="M7 4l13 8-13 8z"/></svg><span>Simula</span></button>
@@ -2790,8 +2826,16 @@ function zoomCenter(f) { const r = stageRect(); zoomAt(f, r.left + r.width / 2, 
 function fitView() {
   const r = stageRect(), SH = sheetDims();
   if (!r.width || !r.height) return;
-  const pad = 24, z = clamp(Math.min((r.width - pad * 2) / SH.w, (r.height - pad * 2) / SH.h), 0.2, 6);
-  ui.view.z = z; ui.view.x = (r.width - SH.w * z) / 2; ui.view.y = (r.height - SH.h * z) / 2; ui.userView = false;
+  let bx = [0, 0, SH.w, SH.h];
+  // su schermi stretti (telefono) si inquadra il disegno invece dell’intero foglio, che risulterebbe minuscolo
+  if (r.width < 600 && doc.comps.length) {
+    bx = [Infinity, Infinity, -Infinity, -Infinity];
+    for (const c of doc.comps) { const b = boxW(c); bx = [Math.min(bx[0], b[0]), Math.min(bx[1], b[1]), Math.max(bx[2], b[2]), Math.max(bx[3], b[3])]; }
+    bx = [bx[0] - 20, bx[1] - 20, bx[2] + 20, bx[3] + 20];
+  }
+  const bw = bx[2] - bx[0], bh = bx[3] - bx[1];
+  const pad = r.width < 600 ? 12 : 24, z = clamp(Math.min((r.width - pad * 2) / bw, (r.height - pad * 2) / bh), 0.2, 6);
+  ui.view.z = z; ui.view.x = (r.width - bw * z) / 2 - bx[0] * z; ui.view.y = (r.height - bh * z) / 2 - bx[1] * z; ui.userView = false;
   render();
 }
 
@@ -3039,7 +3083,7 @@ function setTool(t, silent) {
 function updateHint() {
   const h = $('#hint'); if (!h) return;
   let s = '';
-  if (SIM.on) s = SIM.fault ? '' : SIM.paused ? 'Simulazione in pausa: usa Passo per avanzare di 0,1 s.' : 'Clicca pulsanti, interruttori, sensori e selettori per azionarli. I pulsanti restano premuti finché tieni giù il mouse.';
+  if (SIM.on) s = SIM.fault ? '' : SIM.paused ? 'Simulazione in pausa: usa Passo per avanzare di 0,1 s.' : 'Clicca pulsanti, interruttori, sensori e selettori per azionarli. I pulsanti restano premuti finché li tieni premuti.';
   else if (ui.place) s = ui.place.block ? `Clicca sul foglio per inserire il blocco “${ui.place.block.name}”. Esc annulla.` : `Clicca sul foglio per posare: ${(ui.place.label || DEF[ui.place.type].label).toLowerCase()}. R ruota, Maiusc per posarne altri, Esc annulla.`;
   else if (ui.draft) s = 'Clicca un altro morsetto o un cavo per collegare. Clic sul foglio aggiunge una curva, doppio clic termina in un nodo libero. Esc annulla.';
   else if (ui.tool === 'wire') s = 'Clicca un morsetto (o un cavo) per iniziare un collegamento.';
@@ -3613,6 +3657,7 @@ const ICON = {
 };
 function namesList() { return [...new Set(allComps().filter(c => c.name).map(c => c.name))].sort((a, b) => a.localeCompare(b, 'it', { numeric: true })); }
 function refreshPanels() {
+  document.body.classList.toggle('has-sel', ui.sel.size > 0 && !SIM.on);
   if (SIM.on) { updateSimPanel(); return; }
   renderProps(); refreshCheckBadge(); updateHint();
 }
@@ -4574,6 +4619,7 @@ function init() {
     { t: 'Esporta disegno SVG (foglio attuale)', f: exportSVG },
     '-',
     { t: 'Salva selezione come blocco…', dis: SIM.on || !selComps().length, f: saveSelAsBlock },
+    { t: 'Guida e scorciatoie', k: 'F1', f: openHelp },
     { t: 'Impostazioni del foglio', f: () => { ui.sel.clear(); refreshPanels(); render(); if (window.innerWidth <= 860) $('#propsPanel').classList.add('open'); } },
   ]);
   $('#bEx').onclick = e => menu(e.currentTarget, [{ h: 'Schemi pronti da simulare' }, ...EXAMPLES.map(([id, t]) => ({ t, f: () => replaceGuard(() => loadExample(id)) }))]);
