@@ -33,7 +33,7 @@ jobs:
       - run: node tools/check-version.js
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
           cache-dependency-path: desktop/package-lock.json
       - uses: dtolnay/rust-toolchain@stable
@@ -47,7 +47,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y libwebkit2gtk-4.1-dev libgtk-3-dev librsvg2-dev libayatana-appindicator3-dev patchelf
       - working-directory: desktop
-        run: npm ci
+        run: npm ci && npm run web
       - working-directory: desktop/src-tauri
         run: cargo test --locked
       - working-directory: desktop
