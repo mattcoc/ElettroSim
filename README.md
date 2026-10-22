@@ -29,15 +29,43 @@ Impianti civili e industriali, PLC in ladder, GRAFCET, logica digitale e pneumat
 
 Il pulsante **?** (o il tasto F1) apre la guida con tutte le scorciatoie da tastiera. Sul telefono gli strumenti sono nella barra in basso; dal menu del browser puoi scegliere *Aggiungi a schermata Home* per usarla come un'app.
 
+## Usarla offline e sul computer
+
+- **Dal browser**: dopo la prima apertura il sito funziona anche senza connessione. Da *File › Installa l'app* (o dal menu del browser) diventa un'app con la sua icona, su computer e telefono.
+- **Versione desktop** per Windows, macOS e Linux: scaricala dalla pagina [Releases](https://github.com/mattcoc/ElettroSim/releases/latest). Con la connessione usa la versione più aggiornata del sito (con account e *Lavora insieme*), senza connessione la copia salvata.
+
+Offline si può disegnare, simulare, salvare nel browser ed esportare. Gli schemi salvati nell'account restano leggibili e i salvataggi partono da soli quando torna la rete; accesso e *Lavora insieme* richiedono la connessione.
+
 ## Struttura del progetto
 
-Tutta l'applicazione è nel file `index.html`, senza dipendenze da installare. Il sito è pubblicato con GitHub Pages dal branch `main`: ogni push aggiorna il sito in un paio di minuti.
+Il sito è pubblicato con GitHub Pages dal branch `main`: ogni push lo aggiorna in un paio di minuti. Non serve nessun passaggio di compilazione.
 
-| File | Contenuto |
+| Percorso | Contenuto |
 | --- | --- |
-| `index.html` | L'applicazione completa (interfaccia, simboli, simulatore) |
-| `manifest.webmanifest`, `icon*.png`, `icon.svg` | Icona e installazione sul telefono |
-| `docs/` | Immagini del README |
+| `index.html` | Struttura della pagina |
+| `css/app.css`, `css/fonts.css` | Stile dell'interfaccia e caratteri |
+| `js/config.js` | Configurazione di Firebase |
+| `js/util.js` | Utilità comuni e potenziali elettrici |
+| `js/symbols.js` | Tutti i simboli: disegno, morsetti, comportamento |
+| `js/model.js` | Documento, fogli, geometria, percorsi dei cavi |
+| `js/render.js` | Disegno del foglio |
+| `js/history.js` | Annulla/Ripeti, salvataggio automatico, validazione |
+| `js/sim.js` | Motore di simulazione e GRAFCET |
+| `js/editor.js` | Selezione, modifica, mouse, tocco, tastiera, menu contestuale |
+| `js/ui.js`, `js/panels.js` | Messaggi, finestre, menu, libreria, pannelli, verifica |
+| `js/files.js` | File, esportazioni, account Google |
+| `js/coop.js` | Lavora insieme (tempo reale) |
+| `js/examples.js`, `js/main.js` | Esempi e avvio |
+| `sw.js` | Service worker per l'uso offline (se aggiungi un file, aggiungilo anche qui) |
+| `fonts/`, `vendor/` | Caratteri e librerie inclusi (jsPDF, Firebase) |
+| `desktop/` | Versione desktop (Electron) |
+| `.github/workflows/desktop.yml` | Costruisce e pubblica la versione desktop |
+
+Gli script in `js/` sono normali script del browser caricati in ordine da `index.html` e condividono le stesse variabili globali.
+
+### Pubblicare una nuova versione desktop
+
+Su GitHub vai in *Actions › Versione desktop › Run workflow*, oppure crea un tag `v1.0.1` (*Releases › Draft a new release*). In circa 10 minuti la pagina Releases avrà i file per Windows, macOS e Linux. Per provarla in locale: `cd desktop && npm install && npm start`.
 
 ## Configurare gli account Google (Firebase)
 

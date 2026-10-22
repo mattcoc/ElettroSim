@@ -1,0 +1,65 @@
+# Costruisce la versione desktop di ElettroSim (Windows, macOS, Linux) e la pubblica nella pagina Releases.
+# Si avvia da solo quando si crea un tag "v…" (es. v1.0.1), oppure a mano da Actions › Versione desktop › Run workflow.
+name: Versione desktop
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, macos-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        working-directory: desktop
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: desktop/package-lock.json
+      - run: npm ci
+      - run: npm run dist
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: false
+      - uses: actions/upload-artifact@v4
+        with:
+          name: elettrosim-${{ matrix.os }}
+          path: |
+            desktop/dist/*.exe
+            desktop/dist/*.dmg
+            desktop/dist/*.AppImage
+          if-no-files-found: error
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: out
+          merge-multiple: true
+      - uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_type == 'tag' && github.ref_name || format('desktop-{0}', github.run_number) }}
+          name: ElettroSim desktop ${{ github.ref_type == 'tag' && github.ref_name || format('(build {0})', github.run_number) }}
+          make_latest: true
+          files: out/*
+          body: |
+            Versione desktop di ElettroSim. Funziona online e offline.
+
+            - **Windows**: `ElettroSim-Setup-….exe` (installazione) oppure `ElettroSim-…-portatile.exe` (si avvia senza installare).
+              Al primo avvio Windows può mostrare "PC protetto": clicca *Ulteriori informazioni* › *Esegui comunque*.
+            - **macOS**: `ElettroSim-…-mac.dmg`. Al primo avvio: clic destro sull'app › *Apri*.
+            - **Linux**: `ElettroSim-…-linux.AppImage`, rendilo eseguibile (`chmod +x`) e avvialo.
+
+            Con la connessione l'app usa la versione più aggiornata del sito, con account Google e Lavora insieme; senza connessione usa la copia salvata.

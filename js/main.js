@@ -3,7 +3,7 @@
 /* ---------- offline e installazione ---------- */
 let installEvt = null;
 const RELEASES_URL = 'https://github.com/mattcoc/ElettroSim/releases/latest';
-function isStandalone() { try { return window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true || /Electron/.test(navigator.userAgent); } catch (e) { return false; } }
+function isStandalone() { try { return window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true || /Electron|ElettroSimDesktop/.test(navigator.userAgent); } catch (e) { return false; } }
 function installApp() {
   if (installEvt) { installEvt.prompt(); installEvt.userChoice.finally(() => { installEvt = null; }); return; }
   const ios = /iPhone|iPad|iPod/.test(navigator.userAgent);
