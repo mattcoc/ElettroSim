@@ -17,6 +17,7 @@ Impianti civili e industriali, PLC in ladder, GRAFCET, logica digitale e pneumat
 - **Più fogli** collegati tra loro: elementi con la stessa sigla lavorano insieme anche su fogli diversi.
 - **Esportare** in PDF, PNG o SVG, con cartiglio compilabile.
 - **Salvare** nel browser, su file `.json` oppure **nel tuo account Google**, per ritrovare gli schemi su ogni dispositivo.
+- **Lavorare in due (o più) sullo stesso schema** in tempo reale: *Lavora insieme* crea un link da mandare ai compagni.
 - **Esempi pronti**: avviamento diretto, inversione di marcia, stella-triangolo, PLC, GRAFCET, porte logiche, variatore di frequenza.
 
 ## Come si usa
@@ -46,13 +47,22 @@ Gli account sono già collegati al progetto Firebase `elettrosim-19adf`. Per usa
 2. **Authentication** › Inizia › metodo di accesso **Google** › Attiva › Salva.
 3. **Authentication** › Impostazioni › **Domini autorizzati** › aggiungi il dominio del sito, ad esempio `mattcoc.github.io`.
 4. **Firestore Database** › Crea database (modalità produzione, scegli una località europea, es. `eur3`).
-5. Firestore › **Regole**: incolla queste regole e pubblica. Ogni utente legge e scrive solo i propri dati.
+5. Firestore › **Regole**: incolla queste regole e pubblica. Ogni utente legge e scrive solo i propri dati; gli schemi condivisi (`shared`) sono accessibili solo a chi conosce il link della sessione.
    ```
    rules_version = '2';
    service cloud.firestore {
      match /databases/{database}/documents {
        match /users/{uid}/{document=**} {
          allow read, write: if request.auth != null && request.auth.uid == uid;
+       }
+       match /shared/{room} {
+         allow get, update: if request.auth != null;
+         allow create: if request.auth != null && request.resource.data.owner == request.auth.uid;
+         allow delete: if request.auth != null && resource.data.owner == request.auth.uid;
+         match /people/{uid} {
+           allow read: if request.auth != null;
+           allow write: if request.auth != null && request.auth.uid == uid;
+         }
        }
      }
    }
