@@ -95,9 +95,16 @@ details.cat summary .t{flex:1}
 .tile{display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 4px 6px;border:1px solid var(--line);background:var(--paper);border-radius:8px;cursor:grab;color:#2a3138;touch-action:none;user-select:none}
 .tile:hover{border-color:var(--accent)}
 .tile.armed{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-soft)}
-.tile svg{width:100%;height:46px}
+.tile svg{width:100%;height:42px}
 .tile span{font-size:11px;line-height:1.2;text-align:center;color:#3a434b;min-height:2.4em;display:flex;align-items:center}
 .lib-dim{opacity:.45;pointer-events:none}
+.search input{-webkit-appearance:none;appearance:none;padding-right:30px}
+.search input::-webkit-search-cancel-button{display:none}
+.sclear{position:absolute;right:4px;top:4px;width:24px;height:24px;border:0;border-radius:5px;background:transparent;color:var(--faint);font-size:17px;line-height:1;cursor:pointer;padding:0}
+.sclear:hover{background:var(--bg);color:var(--fg)}
+.libtip{margin:2px 12px 6px;font-size:11.5px;color:var(--faint);line-height:1.35}
+.libnone{padding:14px 12px;color:var(--faint);font-size:12px;margin:0}
+details.cat.recent summary .t{color:var(--accent)}
 .tile.blk{position:relative}
 .xdel{position:absolute;top:3px;right:3px;width:20px;height:20px;border:0;border-radius:5px;background:transparent;color:var(--faint);cursor:pointer;font-size:15px;line-height:1;padding:0}
 .xdel:hover{background:var(--danger-soft);color:var(--danger)}
@@ -126,6 +133,16 @@ details.cat summary .t{flex:1}
 .simtag.paused{background:var(--warn)}
 .simtag i{width:8px;height:8px;border-radius:50%;background:#fff;animation:pulse 1.2s infinite}
 @keyframes pulse{50%{opacity:.25}}
+.emptystate{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:min(420px,calc(100% - 32px));background:var(--raise);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);padding:16px 18px;display:grid;gap:10px;z-index:3}
+.emptystate b{font-family:var(--f-cond);font-size:17px;font-weight:600}
+.emptystate ol{margin:0;padding-left:20px;display:grid;gap:5px;color:var(--muted);font-size:12.5px;line-height:1.45}
+.emptystate .m,.steps .m{color:var(--fg);font-weight:500}
+.steps{display:grid;gap:8px;margin:0;padding:0;list-style:none;counter-reset:st}
+.steps li{display:flex;gap:12px;align-items:flex-start;padding:10px 12px;border:1px solid var(--line);border-radius:9px;background:var(--raise);font-size:12.5px;line-height:1.45;color:var(--muted)}
+.steps li::before{counter-increment:st;content:counter(st);flex:none;width:22px;height:22px;border-radius:50%;background:var(--accent-soft);color:var(--accent);font-weight:600;display:grid;place-items:center;font-size:12px}
+.steps li b{display:block;color:var(--fg);font-size:13px}
+.keys.two{grid-template-columns:auto 1fr auto 1fr}
+@media (max-width:560px){.keys.two{grid-template-columns:auto 1fr}}
 
 /* properties */
 .sec{padding:12px 12px;border-bottom:1px solid var(--line);display:grid;gap:9px}
@@ -226,6 +243,16 @@ details.cat summary .t{flex:1}
   .closep{display:inline-flex}
   .mobtoggle{display:inline-flex}
   .hide-sm{display:none!important}
+  .brand{display:none}
+  .toasts{bottom:calc(80px + env(safe-area-inset-bottom,0px))}
+  .libtip{display:none}
+}
+@media (pointer:coarse){
+  .btn{height:36px}.btn.ico{width:36px}select.sel{height:36px}
+  .pbtn{height:36px;padding:0 12px}
+  .f input[type=text],.f input[type=number],.f select{height:38px}
+  .tab{height:34px}
+  .menu button{height:40px}
 }
 @media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
 </style>
@@ -236,9 +263,11 @@ details.cat summary .t{flex:1}
       <b>ElettroSim</b>
     </div>
     <button class="btn ico mobtoggle" id="bLib" title="Componenti"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></button>
+    <button class="btn ico mobtoggle" id="bProps" title="Proprietà"><svg viewBox="0 0 24 24"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg></button>
     <div class="grp">
       <button class="btn" id="bFile">File <svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></button>
       <button class="btn" id="bEx">Esempi <svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></button>
+      <button class="btn ico" id="bHelp" title="Guida e scorciatoie (F1)" aria-label="Guida e scorciatoie"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 114 2c-.9.6-1.5 1.1-1.5 2.2"/><path d="M12 17h.01"/></svg></button>
     </div>
     <div class="grp edit-only">
       <button class="btn ico" id="bUndo" title="Annulla (Ctrl+Z)"><svg viewBox="0 0 24 24"><path d="M9 14L4 9l5-5"/><path d="M4 9h10a6 6 0 010 12h-3"/></svg></button>
@@ -256,9 +285,9 @@ details.cat summary .t{flex:1}
       <button class="btn ico" id="bDel" title="Elimina (Canc)"><svg viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></svg></button>
     </div>
     <div class="grp">
-      <button class="btn ico" id="bZo" title="Riduci"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M8 11h6M20 20l-4-4"/></svg></button>
-      <span class="zoomv" id="zoomv">100%</span>
-      <button class="btn ico" id="bZi" title="Ingrandisci"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M8 11h6M11 8v6M20 20l-4-4"/></svg></button>
+      <button class="btn ico hide-sm" id="bZo" title="Riduci"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M8 11h6M20 20l-4-4"/></svg></button>
+      <span class="zoomv hide-sm" id="zoomv">100%</span>
+      <button class="btn ico hide-sm" id="bZi" title="Ingrandisci"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M8 11h6M11 8v6M20 20l-4-4"/></svg></button>
       <button class="btn ico" id="bFit" title="Adatta al foglio (0)"><svg viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button>
     </div>
     <div class="spacer"></div>
@@ -276,13 +305,13 @@ details.cat summary .t{flex:1}
       </select>
     </div>
     <button class="simbtn" id="bSim" title="Avvia o ferma la simulazione (F9)"><svg viewBox="0 0 24 24"><path d="M7 4l13 8-13 8z"/></svg><span>Simula</span></button>
-    <button class="btn ico mobtoggle" id="bProps" title="Proprietà"><svg viewBox="0 0 24 24"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg></button>
   </header>
 
   <main class="main">
     <aside class="panel side" id="lib" aria-label="Libreria componenti">
       <div class="ph"><h2>Componenti</h2><button class="btn ico closep" data-close="lib" title="Chiudi"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
-      <div class="search"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg><input id="libq" type="text" placeholder="Cerca: contattore, PLC, cilindro…" autocomplete="off"></div>
+      <div class="search"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg><input id="libq" type="search" placeholder="Cerca: contattore, PLC, cilindro…" autocomplete="off" aria-label="Cerca componenti"><button class="sclear" id="libqX" title="Cancella la ricerca" aria-label="Cancella la ricerca" hidden>×</button></div>
+      <p class="libtip">Clicca un simbolo e poi il foglio, oppure trascinalo.</p>
       <div class="pb" id="libList"></div>
     </aside>
 
@@ -298,6 +327,11 @@ details.cat summary .t{flex:1}
       <div class="banner" id="banner" hidden></div>
       <div class="simtag" id="simtag" hidden><i></i><span id="simtagT">SIMULAZIONE</span></div>
       <div class="hint" id="hint"></div>
+      <div class="emptystate" id="emptyState" hidden>
+        <b>Il foglio è vuoto</b>
+        <ol><li>Scegli un simbolo dalla libreria <span class="m">Componenti</span> e clicca sul foglio.</li><li>Collega i morsetti: clicca su un morsetto e poi su un altro.</li><li>Premi <span class="m">Simula</span> e aziona pulsanti e interruttori.</li></ol>
+        <div class="acts"><button class="pbtn primary" id="esLib">Apri i componenti</button><button class="pbtn" id="esEx">Apri un esempio</button><button class="pbtn" id="esHelp">Guida</button></div>
+      </div>
     </section>
     <nav class="tabs" id="tabs" aria-label="Fogli"></nav>
     </div>
@@ -2200,6 +2234,7 @@ function drawNow() {
   const v = ui.view, vp = $('#vp');
   vp.setAttribute('transform', `translate(${r1(v.x)},${r1(v.y)}) scale(${v.z})`);
   vp.innerHTML = sheetSVG();
+  const es = $('#emptyState'); if (es) es.hidden = SIM.on || !!ui.place || doc.comps.length > 0;
   $('#zoomv').textContent = Math.round(v.z * 100) + '%';
   const cv = $('#cv');
   cv.classList.toggle('c-place', !!ui.place && !SIM.on);
@@ -2797,6 +2832,7 @@ function placeAt(w, keep) {
   const c = mkComp(P.type, w.x, w.y, P.props, doc.comps);
   c.rot = P.rot || 0;
   addComp(c);
+  if (P.lib) noteLibRecent(P);
   ui.sel = new Set([c.id]);
   if (!keep) { ui.place = null; clearArmed(); setTool('select', true); }
   commit();
@@ -3155,6 +3191,7 @@ function onKey(e) {
   const typing = t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT' || t.isContentEditable);
   const mod = e.ctrlKey || e.metaKey;
   if (e.key === 'F9') { e.preventDefault(); toggleSim(); return; }
+  if (e.key === 'F1') { e.preventDefault(); openHelp(); return; }
   if (typing) { if (e.key === 'Escape') t.blur(); return; }
   if ($('#scrim')) { if (e.key === 'Escape') closeModal(); return; }
   if (e.key === ' ' && !ui.space) { ui.space = true; e.preventDefault(); return; }
@@ -3173,6 +3210,7 @@ function onKey(e) {
   if (mod && (e.key === 'd' || e.key === 'D')) { e.preventDefault(); if (copySel()) { const m = ui.mouse.in; ui.mouse.in = false; pasteClip(); ui.mouse.in = m; } return; }
   if (mod && (e.key === 'a' || e.key === 'A')) { e.preventDefault(); selectAll(); return; }
   if (mod) return;
+  if (e.key === '?') { openHelp(); return; }
   switch (e.key) {
     case 'Escape':
       if (ui.draft) ui.draft = null;
@@ -3261,6 +3299,33 @@ function promptBox(title, label, value, okLabel, onOk) {
   inp.addEventListener('keydown', e => { if (e.key === 'Enter') ok(); });
   setTimeout(() => { inp.focus(); inp.select(); }, 20);
 }
+function openHelp() {
+  const m = modal('Come si usa ElettroSim', `
+    <ol class="steps">
+      <li><div><b>Posa i componenti</b>Cerca un simbolo nella libreria <span class="m">Componenti</span>: cliccalo e poi clicca sul foglio, oppure trascinalo. Tieni premuto Maiusc per posarne altri uguali.</div></li>
+      <li><div><b>Collega i morsetti</b>Clicca su un morsetto (il pallino all’estremità del simbolo) e poi su un altro. Clic sul foglio aggiunge una curva, Esc annulla.</div></li>
+      <li><div><b>Dai le sigle</b>Seleziona un elemento e scrivi la sigla nel pannello <span class="m">Proprietà</span>. Elementi con la stessa sigla lavorano insieme: la bobina KM1 muove tutti i contatti KM1.</div></li>
+      <li><div><b>Verifica e simula</b>Premi <span class="m">Verifica</span> per trovare errori, poi <span class="m">Simula</span> e clicca pulsanti, interruttori e sensori per azionarli.</div></li>
+    </ol>
+    <h3 class="mh3">Scorciatoie da tastiera</h3>
+    <dl class="keys two">
+      <dt><kbd>V</kbd></dt><dd>Seleziona</dd><dt><kbd>W</kbd></dt><dd>Cavo</dd>
+      <dt><kbd>T</kbd></dt><dd>Testo</dd><dt><kbd>L</kbd></dt><dd>Linea</dd>
+      <dt><kbd>R</kbd></dt><dd>Ruota</dd><dt><kbd>M</kbd></dt><dd>Specchia</dd>
+      <dt><kbd>Canc</kbd></dt><dd>Elimina</dd><dt><kbd>Esc</kbd></dt><dd>Annulla l’azione in corso</dd>
+      <dt><kbd>Ctrl</kbd>+<kbd>Z</kbd></dt><dd>Annulla</dd><dt><kbd>Ctrl</kbd>+<kbd>Y</kbd></dt><dd>Ripeti</dd>
+      <dt><kbd>Ctrl</kbd>+<kbd>C</kbd> / <kbd>V</kbd></dt><dd>Copia, incolla</dd><dt><kbd>Ctrl</kbd>+<kbd>D</kbd></dt><dd>Duplica</dd>
+      <dt><kbd>Ctrl</kbd>+<kbd>S</kbd></dt><dd>Salva nel browser</dd><dt><kbd>Frecce</kbd></dt><dd>Sposta la selezione</dd>
+      <dt><kbd>Rotella</kbd></dt><dd>Zoom</dd><dt><kbd>0</kbd></dt><dd>Adatta al foglio</dd>
+      <dt><kbd>Spazio</kbd>+trascina</dt><dd>Sposta la vista</dd><dt><kbd>Pag↑</kbd> <kbd>Pag↓</kbd></dt><dd>Cambia foglio</dd>
+      <dt><kbd>F9</kbd></dt><dd>Avvia / ferma la simulazione</dd><dt><kbd>P</kbd> <kbd>N</kbd></dt><dd>Pausa, passo</dd>
+    </dl>
+    <p class="note">Su tablet e telefono: due dita per zoomare, un dito sul foglio vuoto per spostare la vista. Il lavoro viene salvato automaticamente in questo browser.</p>`,
+    '<button class="pbtn" data-ex>Apri un esempio</button><button class="pbtn primary" data-c>Ho capito</button>', true);
+  m.querySelector('[data-c]').onclick = closeModal;
+  m.querySelector('[data-ex]').onclick = () => { closeModal(); $('#bEx').click(); };
+  LS.set('elettrosim.seenHelp', '1');
+}
 let openMenuEl = null;
 function closeMenu() { if (openMenuEl) { openMenuEl.remove(); openMenuEl = null; } }
 function menu(anchor, items) {
@@ -3346,34 +3411,61 @@ function buildLibrary() {
     });
     html += '</div></details>';
   });
+  html = '<div id="libRecent"></div>' + html;
   const B = loadBlocks(), bg = LIB.length;
   html += `<details class="cat" ${libOpen.has(bg) || B.length ? 'open' : ''} data-g="${bg}"><summary><span class="t">I miei blocchi</span><span class="n">${B.length}</span></summary>`;
   html += B.length ? `<div class="tiles">${B.map(b => `<div class="tile blk" role="button" tabindex="0" data-blk="${esc(b.id)}" title="${esc(b.name)}" data-q="${esc((b.name + ' blocco').toLowerCase())}">${blockSVG(b)}<span>${esc(b.name)}</span><button class="xdel" data-delblk="${esc(b.id)}" title="Elimina il blocco" aria-label="Elimina il blocco ${esc(b.name)}">×</button></div>`).join('')}</div>` : '<p class="empty" style="padding:0 12px 12px">Seleziona più elementi sul foglio e scegli “Salva come blocco” per riusarli qui.</p>';
   html += '</details>';
+  html += '<p class="libnone" id="libNone" hidden>Nessun componente trovato. Prova con un’altra parola, ad esempio “relè” o “lampada”.</p>';
   box.innerHTML = html;
-  $$('.tile', box).forEach(el => {
-    el.addEventListener('pointerdown', libDown);
-    el.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); armTile(el); } });
-  });
+  bindTiles(box);
+  renderRecent();
   $$('[data-delblk]', box).forEach(b => {
     b.addEventListener('pointerdown', e => e.stopPropagation());
     b.onclick = e => { e.stopPropagation(); const id = b.dataset.delblk; const bl = loadBlocks().find(x => x.id === id); confirmBox('Eliminare il blocco?', `Il blocco “${bl ? bl.name : ''}” verrà rimosso dalla libreria.`, 'Elimina', () => { saveBlocks(loadBlocks().filter(x => x.id !== id)); buildLibrary(); }); };
   });
   filterLib();
 }
+function bindTiles(box) {
+  $$('.tile', box).forEach(el => {
+    el.addEventListener('pointerdown', libDown);
+    el.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); armTile(el); } });
+  });
+}
+function loadRecent() { try { const r = JSON.parse(LS.get('elettrosim.recent') || '[]'); return Array.isArray(r) ? r.filter(x => Array.isArray(x) && DEF[x[0]]) : []; } catch (e) { return []; } }
+function noteLibRecent(P) {
+  const it = [P.type, P.props || null, P.label || null], k = JSON.stringify(it);
+  const R = [it, ...loadRecent().filter(x => JSON.stringify(x) !== k)].slice(0, 6);
+  LS.set('elettrosim.recent', JSON.stringify(R));
+  renderRecent();
+}
+function renderRecent() {
+  const box = $('#libRecent'); if (!box) return;
+  const R = loadRecent(), sc = box.parentElement, h0 = box.offsetHeight;
+  box.innerHTML = R.length ? `<details class="cat recent" open data-g="r"><summary><span class="t">Usati di recente</span><span class="n">${R.length}</span></summary><div class="tiles">${R.map(([type, props, label], i) => { const lab = label || DEF[type].label; return `<div class="tile" role="button" tabindex="0" data-r="${i}" title="${esc(DEF[type].desc || lab)}" data-q="">${previewSVG(type, props, 0)}<span>${esc(lab)}</span></div>`; }).join('')}</div></details>` : '';
+  bindTiles(box);
+  filterLib();
+  if (sc && sc.scrollTop > 0) sc.scrollTop += box.offsetHeight - h0;
+}
 function filterLib() {
   const q = ($('#libq').value || '').trim().toLowerCase();
+  $('#libqX').hidden = !q;
+  let total = 0;
   $$('details.cat', $('#libList')).forEach(d => {
+    if (d.dataset.g === 'r') { d.hidden = !!q; return; }
     let any = 0;
     $$('.tile', d).forEach(t => { const ok = !q || t.dataset.q.includes(q); t.hidden = !ok; if (ok) any++; });
     d.hidden = !!q && !any;
     if (q && any) d.open = true;
+    total += any;
   });
+  const n = $('#libNone'); if (n) n.hidden = !q || total > 0;
 }
 function tileItem(el) {
   if (el.dataset.blk) { const bl = loadBlocks().find(b => b.id === el.dataset.blk); return bl ? { block: bl } : null; }
+  if (el.dataset.r != null) { const it = loadRecent()[+el.dataset.r]; return it ? { type: it[0], props: it[1], label: it[2], rot: 0, lib: true } : null; }
   const it = LIB[+el.dataset.g].items[+el.dataset.i];
-  return { type: it[0], props: it[1] || null, label: it[2] || null, rot: 0 };
+  return { type: it[0], props: it[1] || null, label: it[2] || null, rot: 0, lib: true };
 }
 function blurSearch() { const a = document.activeElement; if (a && a.id === 'libq') a.blur(); }
 function armTile(el) {
@@ -3694,14 +3786,7 @@ function docPropsHTML() {
   <div class="sec"><h3>Fogli (${doc.pages.length})</h3><ul class="links">${doc.pages.map((p, i) => `<li data-pgo="${i}"><span>${i + 1}. ${esc(p.name)}</span><span class="m">${p.comps.filter(c => c.type !== 'junction').length} el.</span></li>`).join('')}</ul><div class="acts"><button class="pbtn" id="mAddPg">Nuovo foglio</button><button class="pbtn" id="mRenPg">Rinomina questo</button></div></div>
   <div class="sec"><h3>Come si usa</h3>
     <p class="note">Trascina un simbolo dalla libreria sul foglio, poi clicca su un morsetto e su un altro per collegarli. Gli elementi con la stessa sigla lavorano insieme: la bobina KM1 muove tutti i contatti KM1, anche su fogli diversi.</p>
-    <dl class="keys">
-      <dt><kbd>R</kbd></dt><dd>Ruota</dd><dt><kbd>M</kbd></dt><dd>Specchia</dd>
-      <dt><kbd>W</kbd></dt><dd>Cavo</dd><dt><kbd>T</kbd> <kbd>L</kbd></dt><dd>Testo, linea</dd>
-      <dt><kbd>Canc</kbd></dt><dd>Elimina</dd><dt><kbd>Ctrl</kbd>+<kbd>Z</kbd></dt><dd>Annulla</dd>
-      <dt><kbd>Ctrl</kbd>+<kbd>D</kbd></dt><dd>Duplica</dd><dt><kbd>Pag↑</kbd> <kbd>Pag↓</kbd></dt><dd>Cambia foglio</dd>
-      <dt><kbd>Rotella</kbd></dt><dd>Zoom</dd><dt><kbd>Spazio</kbd>+trascina</dt><dd>Sposta la vista</dd>
-      <dt><kbd>F9</kbd></dt><dd>Avvia / ferma la simulazione</dd><dt><kbd>P</kbd> <kbd>N</kbd></dt><dd>Pausa, passo (in simulazione)</dd>
-    </dl>
+    <div class="acts"><button class="pbtn" id="mHelp">Guida e scorciatoie da tastiera</button></div>
   </div>`;
 }
 function bindDocProps() {
@@ -3718,6 +3803,7 @@ function bindDocProps() {
   if (ck) ck.onchange = () => { const m = /^(\d{1,2})[:.](\d{2})$/.exec(ck.value.trim()); if (!m || +m[1] > 23 || +m[2] > 59) { toast('Scrivi l’ora come hh:mm, ad esempio 08:00.', 'err'); ck.value = M.clock || '08:00'; return; } M.clock = m[1].padStart(2, '0') + ':' + m[2]; ck.value = M.clock; commit({ keepProps: true }); };
   const wc = $('#mWcol'); if (wc) wc.onchange = () => { ui.wireColor = wc.value; };
   $$('[data-pgo]').forEach(li => li.onclick = () => switchPage(+li.dataset.pgo));
+  const mh = $('#mHelp'); if (mh) mh.onclick = openHelp;
   const ap = $('#mAddPg'); if (ap) ap.onclick = addPage;
   const rp = $('#mRenPg'); if (rp) rp.onclick = () => renamePage(doc.page);
 }
@@ -4293,6 +4379,12 @@ function init() {
   const st = document.createElement('style'); st.textContent = SHEET_CSS; document.head.appendChild(st);
   buildLIB(); buildLibrary();
   $('#libq').addEventListener('input', filterLib);
+  $('#libq').addEventListener('keydown', e => { if (e.key === 'Escape' && e.target.value) { e.preventDefault(); e.stopPropagation(); e.target.value = ''; filterLib(); } });
+  $('#libqX').onclick = () => { const q = $('#libq'); q.value = ''; filterLib(); q.focus(); };
+  $('#bHelp').onclick = openHelp;
+  $('#esHelp').onclick = openHelp;
+  $('#esEx').onclick = () => $('#bEx').click();
+  $('#esLib').onclick = () => { if (window.innerWidth <= 860) { $('#propsPanel').classList.remove('open'); $('#lib').classList.add('open'); } setTimeout(() => $('#libq').focus(), 220); };
   $('#bFile').onclick = e => menu(e.currentTarget, [
     { t: 'Nuovo schema', f: () => replaceGuard(() => loadDoc(newDoc(), 'Nuovo schema vuoto.')) },
     { t: 'Apri…', f: openDialog },
@@ -4358,6 +4450,7 @@ function init() {
   refreshPanels();
   requestAnimationFrame(() => { fitView(); drawNow(); });
   if (!loaded) toast('Esempio caricato: premi Simula per provarlo.');
+  if (!LS.get('elettrosim.seenHelp')) setTimeout(openHelp, 400);
   initCaps();
   window.__es = { get doc() { return doc; }, DEF, SIM, ui, POTS, buildExample, loadExample, loadDoc, startSim, stopSim, step, doAct, actFor, verify, termsW, wireRoute, cmap, allComps, exportSVGString, commit, undo, redo, switchPage, addPage, mkComp, grParse, buildTopo, previewSVG, LIB: () => LIB };
 }
