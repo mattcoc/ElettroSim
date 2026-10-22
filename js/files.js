@@ -62,7 +62,7 @@ function loadJsPDF() {
   if (window.jspdf && window.jspdf.jsPDF) return Promise.resolve(window.jspdf.jsPDF);
   if (!jspdfP) jspdfP = new Promise((res, rej) => {
     const s = document.createElement('script');
-    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
+    s.src = 'vendor/jspdf.umd.min.js';
     s.onload = () => (window.jspdf && window.jspdf.jsPDF ? res(window.jspdf.jsPDF) : rej(new Error('jspdf')));
     s.onerror = () => { jspdfP = null; rej(new Error('jspdf')); };
     document.head.appendChild(s);
@@ -87,11 +87,15 @@ async function exportPDF() {
   } catch (e) { toast('Non è stato possibile creare il PDF.', 'err'); }
 }
 const CLOUD = { lib: null, user: null, id: null, timer: null, blkTimer: null, saving: false, again: false };
-const FB_URL = 'https://www.gstatic.com/firebasejs/10.12.2/';
+const FB_URL = new URL('vendor/firebase/', document.baseURI).href;
 function cloudLib() {
   if (!CLOUD.lib) CLOUD.lib = Promise.all(['firebase-app.js', 'firebase-auth.js', 'firebase-firestore.js'].map(f => import(FB_URL + f))).then(([A, U, F]) => {
     const app = A.initializeApp(FIREBASE_CONFIG);
-    return { U, F, auth: U.getAuth(app), db: F.getFirestore(app) };
+    // cache locale di Firestore: gli schemi dell’account restano leggibili offline e i salvataggi partono al ritorno della rete
+    let db;
+    try { db = F.initializeFirestore(app, { localCache: F.persistentLocalCache({ tabManager: F.persistentMultipleTabManager() }) }); }
+    catch (e) { db = F.getFirestore(app); }
+    return { U, F, auth: U.getAuth(app), db };
   }).catch(e => { CLOUD.lib = null; throw e; });
   return CLOUD.lib;
 }
@@ -107,6 +111,7 @@ function authErr(e) {
   toast('Accesso non riuscito. Riprova.', 'err');
 }
 async function cloudSignIn() {
+  if (!navigator.onLine) { toast('Sei offline: per accedere all’account serve la connessione. Puoi continuare a lavorare, lo schema resta salvato su questo dispositivo.'); return; }
   let L;
   try { L = await cloudLib(); } catch (e) { toast('Impossibile caricare il servizio di accesso. Controlla la connessione.', 'err'); return; }
   const prov = new L.U.GoogleAuthProvider();
@@ -133,8 +138,12 @@ async function cloudWrite(P) {
   CLOUD.saving = true; setSaveStatus('Salvataggio nel tuo account…');
   try {
     const L = await cloudLib();
-    if (CLOUD.id) await L.F.setDoc(L.F.doc(userCol(L, 'schemes'), CLOUD.id), P);
-    else { const r = await L.F.addDoc(userCol(L, 'schemes'), P); setCloudId(r.id); }
+    const ref = CLOUD.id ? L.F.doc(userCol(L, 'schemes'), CLOUD.id) : L.F.doc(userCol(L, 'schemes'));
+    setCloudId(ref.id);
+    const w = L.F.setDoc(ref, P);
+    // offline la scrittura resta in coda nella cache locale e parte da sola quando torna la connessione
+    if (!navigator.onLine) { w.catch(() => {}); setSaveStatus('Offline: salvato su questo dispositivo, andrà nel tuo account al ritorno della rete'); return true; }
+    await w;
     setSaveStatus('Salvato nel tuo account');
     return true;
   } catch (e) {

@@ -34,7 +34,7 @@ function coopState(st) {
   c.hidden = !COOP.room;
   c.classList.toggle('sync', st === 'sync'); c.classList.toggle('err', st === 'err');
   const n = COOP.peers.length;
-  $('#coopChipT').textContent = st === 'err' ? 'Condiviso · non sincronizzato' : n ? `Condiviso · ${n + 1} persone` : 'Condiviso · solo tu';
+  $('#coopChipT').textContent = st === 'err' ? (navigator.onLine ? 'Condiviso · non sincronizzato' : 'Condiviso · offline, riprovo…') : n ? `Condiviso · ${n + 1} persone` : 'Condiviso · solo tu';
   document.body.classList.toggle('coop-on', !!COOP.room);
   const b = $('#bCoop'); if (b) b.classList.toggle('on', !!COOP.room);
 }
