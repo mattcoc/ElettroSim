@@ -11,7 +11,7 @@ Impianti civili e industriali, PLC in ladder, GRAFCET, logica digitale e pneumat
 
 ## Cosa puoi fare
 
-- **Disegnare schemi** con oltre 150 simboli: alimentazioni, fusibili, magnetotermici, contattori, relè termici, motori, variatori, pulsanti, sensori, lampade, PLC, ladder, GRAFCET, pneumatica e vista del quadro.
+- **Disegnare schemi** con oltre 250 simboli: alimentazioni, fusibili, magnetotermici, contattori, relè termici, motori, variatori, pulsanti, sensori, lampade, PLC, ladder, GRAFCET, pneumatica e vista del quadro.
 - **Simulare il circuito**: premi *Simula* e aziona pulsanti, interruttori e sensori. I cavi in tensione si colorano, bobine e motori si attivano, temporizzatori e contatori funzionano.
 - **Verificare lo schema**: il controllo segnala morsetti scollegati, sigle duplicate, cortocircuiti e altri errori.
 - **Più fogli** collegati tra loro: elementi con la stessa sigla lavorano insieme anche su fogli diversi.
