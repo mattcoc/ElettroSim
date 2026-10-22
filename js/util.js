@@ -46,6 +46,26 @@ function potPair(a, b) {
   if (A.sys === 'dc') return (A.kind === 'P' && B.kind === 'M') || (A.kind === 'M' && B.kind === 'P');
   return true;
 }
+/* tensioni (valori in volt): la rete ha una tensione concatenata, la continua un unico valore; i secondari
+   dei trasformatori e le uscite dei variatori hanno la loro. VSYS viene aggiornato all’avvio della simulazione. */
+const VSYS = { vc: 400, vdc: 24, own: {} };
+const VLN_STD = { 400: 230, 690: 400, 230: 133, 208: 120, 480: 277, 380: 220 };
+const vLN = vc => VLN_STD[vc] || Math.round(vc / Math.sqrt(3));
+function pairVolts(a, b) {
+  if (!potPair(a, b)) return 0;
+  const A = POTS[a], B = POTS[b];
+  if (A.sys === 'dc') return VSYS.vdc;
+  const o = A.sys === 'mains' ? { ll: VSYS.vc, ln: vLN(VSYS.vc) } : VSYS.own[A.owner];
+  if (!o) return null;
+  return A.kind === 'L' && B.kind === 'L' ? o.ll : o.ln;
+}
+function voltsOf(A, B) {
+  let best = 0, unk = false;
+  for (const a of A) for (const b of B) { const v = pairVolts(a, b); if (v == null) unk = true; else if (v > best) best = v; }
+  return best || (unk ? null : 0);
+}
+const potTxt = p => p === 'P' ? `+${fmtV(doc.meta.vdc)}V` : POT_TXT[p] || p;
+const fmtV = v => String(Math.round((+v || 0) * 10) / 10).replace('.', ',');
 function voltOf(A, B) { for (const a of A) for (const b of B) if (potPair(a, b)) return true; return false; }
 function hasConflict(arr) { for (let i = 0; i < arr.length; i++) for (let j = i + 1; j < arr.length; j++) if (potConflict(arr[i], arr[j])) return true; return false; }
 const potLevel = id => { const k = POTS[id].kind; return k === 'P' || k === 'L' ? 2 : 0; };

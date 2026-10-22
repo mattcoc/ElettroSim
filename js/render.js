@@ -60,6 +60,12 @@ function sheetSVG(o) {
     const st = simOn ? SIM.disp[c.id] : null;
     const sel = !exp && ui.sel.has(c.id);
     s += `<g class="sym${sel ? ' sel' : ''}" transform="${tfStr(c)}">${d.draw(c, st)}</g>`;
+    if (st && (st.burnt || st.low)) {
+      const b = boxW(c), col = st.burnt ? '#c0262d' : '#a15c00';
+      s += `<g class="vwarn" style="pointer-events:none"><rect x="${b[0] - 3}" y="${b[1] - 3}" width="${b[2] - b[0] + 6}" height="${b[3] - b[1] + 6}" rx="3" style="fill:${st.burnt ? 'rgba(192,38,45,.10)' : 'rgba(161,92,0,.08)'};stroke:${col};stroke-width:1;stroke-dasharray:3 2"/>`
+        + (st.burnt ? `<path d="M${b[0]} ${b[1]}L${b[2]} ${b[3]}M${b[2]} ${b[1]}L${b[0]} ${b[3]}" style="stroke:${col};stroke-width:1.4;fill:none;opacity:.8"/>` : '')
+        + `<text x="${(b[0] + b[2]) / 2}" y="${b[1] - 6}" text-anchor="middle" style="font-size:7px;font-weight:600;fill:${col}">${st.burnt ? 'BRUCIATO' : `${fmtV(st.lowV)} V: TENSIONE BASSA`}</text></g>`;
+    }
   }
   for (const g of conn.groups.values()) {
     if (g.br >= 3) { let cls = 'dot'; if (simOn) cls += ' ' + netClass(netOf(topo.idx.get(g.keys[0]))); s += `<circle class="${cls}" cx="${g.x}" cy="${g.y}" r="2.4"/>`; }

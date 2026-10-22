@@ -156,13 +156,13 @@ function srcSym(n) { let s = ''; for (let i = 0; i < n; i++) { const x = i * 20;
 def('src1', {
   cat: 'src', label: 'Alimentazione singola', prefix: 'X', noName: true, showName: false, desc: 'Un morsetto di alimentazione: scegli fase, neutro, terra o polarità.',
   terms: [T('t', 0, 0, 's', '')], box: [-7, -21, 7, 0], nameAt: [-8, -8, 'w'], props: { pot: 'L1' },
-  draw: () => srcSym(1), inner: c => [{ x: 0, y: -15.5, t: POT_TXT[c.props.pot] || c.props.pot, cls: 'lbl-pot' }],
+  draw: () => srcSym(1), inner: c => [{ x: 0, y: -15.5, t: potTxt(c.props.pot), cls: 'lbl-pot' }],
   sim: { src: c => ({ t: PT[c.props.pot] ?? PT.L1 }) },
 });
 def('srcArrow', {
   cat: 'src', label: 'Alimentazione da cavo', prefix: 'X', noName: true, showName: false, desc: 'Arrivo di una linea già alimentata (freccia).',
   terms: [T('t', 0, 0, 's', '')], box: [-7, -22, 7, 0], nameAt: [-8, -8, 'w'], props: { pot: 'L1' },
-  draw: () => ln(0, -14, 0, 0) + pa('M-4,-12 L0,-6 L4,-12'), inner: c => [{ x: 0, y: -18, t: POT_TXT[c.props.pot] || c.props.pot, cls: 'lbl-pot' }],
+  draw: () => ln(0, -14, 0, 0) + pa('M-4,-12 L0,-6 L4,-12'), inner: c => [{ x: 0, y: -18, t: potTxt(c.props.pot), cls: 'lbl-pot' }],
   sim: { src: c => ({ t: PT[c.props.pot] ?? PT.L1 }) },
 });
 function multiSrc(id, label, pots, labs, desc) {
@@ -170,7 +170,7 @@ function multiSrc(id, label, pots, labs, desc) {
     cat: 'src', label, prefix: 'X', noName: true, showName: false, desc,
     terms: pots.map((p, i) => T(p, i * 20, 0, 's', '')), box: [-7, -21, (pots.length - 1) * 20 + 7, 0], nameAt: [-8, -8, 'w'],
     draw: () => srcSym(pots.length),
-    inner: () => pots.map((p, i) => ({ x: i * 20, y: -15.5, t: labs ? labs[i] : POT_TXT[p], cls: 'lbl-pot' })),
+    inner: () => pots.map((p, i) => ({ x: i * 20, y: -15.5, t: labs ? labs[i] : potTxt(p), cls: 'lbl-pot' })),
     sim: { src: () => Object.fromEntries(pots.map(p => [p, PT[p]])) },
   });
 }
@@ -185,7 +185,7 @@ multiSrc('srcdc', 'Continua 24 V', ['P', 'M'], null, 'Alimentazione in corrente 
 def('trafo1', {
   cat: 'src', label: 'Trasformatore', prefix: 'T', autoNum: true, desc: 'Trasformatore monofase: quando il primario è alimentato, il secondario diventa una rete separata.',
   terms: [T('p1', 0, -30, 'n', '1'), T('p2', 20, -30, 'n', '2'), T('s1', 0, 30, 's', '3'), T('s2', 20, 30, 's', '4')],
-  box: [-3, -30, 23, 30], nameAt: [-5, 0, 'w'],
+  box: [-3, -30, 23, 30], nameAt: [-5, 0, 'w'], props: { vs: 24 },
   draw: (c, st) => ci(10, -6.5, 9, st && st.on ? 'box-on' : '') + ci(10, 6.5, 9, st && st.on ? 'box-on' : '') + pa('M0,-30 L0,-20 L5.5,-14') + pa('M20,-30 L20,-20 L14.5,-14') + pa('M0,30 L0,20 L5.5,14') + pa('M20,30 L20,20 L14.5,14'),
   sim: {
     sys: () => [['L', 0], ['L', 1]],
@@ -196,7 +196,7 @@ def('trafo1', {
 def('trafo3', {
   cat: 'src', label: 'Trasformatore trifase', prefix: 'T', autoNum: true, desc: 'Trasformatore trifase triangolo/stella con neutro al secondario.',
   terms: [T('L1', 0, -40, 'n', '1U'), T('L2', 20, -40, 'n', '1V'), T('L3', 40, -40, 'n', '1W'), T('u', 0, 40, 's', '2U'), T('v', 20, 40, 's', '2V'), T('w', 40, 40, 's', '2W'), T('n', 60, 40, 's', '2N')],
-  box: [-4, -40, 64, 40], nameAt: [-6, 0, 'w'],
+  box: [-4, -40, 64, 40], nameAt: [-6, 0, 'w'], props: { vs: 400 },
   draw: (c, st) => {
     const k = st && st.on ? 'box-on' : '';
     return ci(20, -10, 15, k) + ci(20, 10, 15, k) + ln(0, -40, 0, -30) + ln(0, -30, 9, -20) + ln(20, -40, 20, -25) + ln(40, -40, 40, -30) + ln(40, -30, 31, -20)

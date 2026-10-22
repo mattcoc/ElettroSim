@@ -64,6 +64,7 @@ function propLabel(c, k) {
     hz: 'Frequenza di uscita (Hz)', pos: 'Posizione iniziale', val: 'Cifra iniziale (0-9)', a: 'Primo contattore', b: 'Secondo contattore', rows: 'Numero di righe',
     expr: 'Condizione (recettività)', q: 'Tipo di azione', d: 'Ritardo D (s)', l: 'Durata limitata L (s)', cond: 'Condizione C (facoltativa)',
     valve: 'Elettrovalvola', v1: 'Velocità di uscita (%/s)', v2: 'Velocità di rientro (%/s)', plus: 'Pilota uscita', minus: 'Pilota rientro', s0: 'Sensore a riposo', s1: 'Sensore a fine corsa', sm: 'Sensore intermedio',
+    vn: 'Tensione nominale', vs: 'Tensione del secondario (V)',
     style: 'Stile', text: 'Testo', size: 'Dimensione', bold: 'Grassetto', dx: 'Lunghezza X', dy: 'Lunghezza Y', w: 'Larghezza', h: 'Altezza', lw: 'Spessore linea', dash: 'Tratteggiata', fill: 'Riempimento',
   };
   return L[k] || k;
@@ -82,6 +83,8 @@ function propField(c, k) {
     case 't': case 't2': case 'd': case 'l': return num(0, 3600, k === 't' || k === 't2' ? 0.1 : 0.5);
     case 'preset': return num(1, 9999, 1);
     case 'hz': return num(1, 400, 1);
+    case 'vn': return sel(VN_OPTS) + (v ? `<p class="note">In simulazione si brucia sopra ${fmtV(v * 1.2)} V e non funziona sotto ${fmtV(v * 0.8)} V.</p>` : '');
+    case 'vs': return num(1, 100000, 1);
     case 'val': return num(0, 9, 1);
     case 'rows': return num(1, 30, 1);
     case 'v1': case 'v2': return num(5, 500, 5);
@@ -120,10 +123,32 @@ function compPropsHTML(c) {
     if (d.fv) f = '<p class="note">Si collega allo schema tramite la sigla: deve essere uguale a quella del componente reale.</p>' + f;
     h += `<div class="sec"><h3>Impostazioni</h3>${f}</div>`;
   }
+  h += supplyVoltHTML(c);
   const ts = termsOf(c);
   if (ts.length && d.termLabels !== false && !d.noName && !d.boxDev) h += `<div class="sec"><h3>Morsetti</h3><div class="terms">${ts.map(t => `<div class="f"><input type="text" data-term="${esc(t.id)}" value="${esc(labelOf(c, t.id))}" aria-label="Morsetto ${esc(t.id)}" spellcheck="false"></div>`).join('')}</div>${c.autoLab ? '<p class="note">Numerazione automatica in base alla sigla.</p>' : ''}</div>`;
   h += `<div class="sec">${actsHTML()}</div>`;
   return h;
+}
+// tensioni di alimentazione modificabili direttamente dal simbolo della sorgente (valgono per tutto lo schema)
+function supplyKinds(c) {
+  const d = DEF[c.type];
+  if (!d.sim || !d.sim.src || d.sim.sys || c.type === 'rectb' || /^psu/.test(c.type)) return new Set();
+  let out = null;
+  try { out = d.sim.src(c, { dev: () => ({}), sysPots: () => [], plcRun: () => true, disp() {}, pots: () => [] }); } catch (e) { out = null; }
+  return new Set(Object.values(out || {}).filter(p => p != null && POTS[p]).map(p => POTS[p].sys));
+}
+function voltFieldsHTML(kinds, M) {
+  let h = '';
+  if (kinds.has('mains')) h += `<div class="f"><label for="vVc">Tensione di rete concatenata (V)</label><input id="vVc" type="number" min="1" max="100000" step="1" value="${esc(M.vc)}"></div><p class="note">Fase-neutro: ${fmtV(vLN(+M.vc || 400))} V. Vale per tutte le alimentazioni L1, L2, L3, N dello schema.</p>`;
+  if (kinds.has('dc')) h += `<div class="f"><label for="vVdc">Tensione continua (V)</label><input id="vVdc" type="number" min="0.1" max="100000" step="0.1" value="${esc(M.vdc)}"></div><p class="note">Vale per tutte le alimentazioni +/0 V, batterie e alimentatori dello schema.</p>`;
+  return h;
+}
+function supplyVoltHTML(c) { const k = supplyKinds(c); return k.size ? `<div class="sec"><h3>Tensione di alimentazione</h3>${voltFieldsHTML(k, doc.meta)}</div>` : ''; }
+function bindVoltFields() {
+  for (const [id, f, def] of [['#vVc', 'vc', 400], ['#vVdc', 'vdc', 24]]) {
+    const el = $(id); if (!el) continue;
+    el.addEventListener('change', () => { let v = parseFloat(String(el.value).replace(',', '.')); if (!Number.isFinite(v) || v <= 0) v = def; doc.meta[f] = clamp(v, 0.1, 100000); commit(); });
+  }
 }
 function linkInfoHTML(c) {
   const k = key(c.name); if (!k) return '';
@@ -139,6 +164,7 @@ function linkInfoHTML(c) {
 }
 function bindCompProps(c) {
   const el = $('#props');
+  bindVoltFields();
   const n = $('#pName', el);
   if (n) {
     n.addEventListener('input', () => { c.name = n.value.trim(); render(); });
@@ -197,6 +223,7 @@ function docPropsHTML() {
     <div class="f"><label for="mWcol">Colore dei nuovi cavi</label><select id="mWcol">${Object.keys(WIRE_COL).map(k => `<option value="${k}" ${(ui.wireColor || 'auto') === k ? 'selected' : ''}>${k === 'auto' ? 'automatico' : k}</option>`).join('')}</select></div>
   </div>
   <div class="sec"><h3>Simulazione</h3>
+    ${voltFieldsHTML(new Set(['mains', 'dc']), M)}
     <div class="f"><label for="mClock">Ora iniziale dell’orologio (interruttori orari)</label><input id="mClock" type="text" value="${esc(M.clock || '08:00')}" placeholder="08:00"></div>
     <p class="note">Durante la simulazione l’orologio avanza di 1 minuto per ogni secondo (×1). Vengono simulati tutti i fogli insieme: elementi con la stessa sigla su fogli diversi lavorano insieme.</p>
   </div>
@@ -216,6 +243,7 @@ function bindDocProps() {
   bind('#mTitle', 'title', true); bind('#mAuthor', 'author', true); bind('#mSchool', 'school', true); bind('#mDate', 'date', true);
   bind('#mNum', 'num', true); bind('#mOf', 'of', true); bind('#mSheet', 'sheet');
   bind('#mGrid', 'grid'); bind('#mTb', 'tb'); bind('#mDash', 'dash'); bind('#mXref', 'xref'); bind('#mWnum', 'wnum');
+  bindVoltFields();
   const ck = $('#mClock');
   if (ck) ck.onchange = () => { const m = /^(\d{1,2})[:.](\d{2})$/.exec(ck.value.trim()); if (!m || +m[1] > 23 || +m[2] > 59) { toast('Scrivi l’ora come hh:mm, ad esempio 08:00.', 'err'); ck.value = M.clock || '08:00'; return; } M.clock = m[1].padStart(2, '0') + ':' + m[2]; ck.value = M.clock; commit({ keepProps: true }); };
   const wc = $('#mWcol'); if (wc) wc.onchange = () => { ui.wireColor = wc.value; };

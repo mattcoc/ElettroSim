@@ -1,5 +1,41 @@
 /* ElettroSim · Motore di simulazione: reti, passo di calcolo, comandi manuali e GRAFCET. */
 'use strict';
+/* ---------- tensione nominale dei carichi ----------
+   Come in CADe SIMU: un carico con tensione nominale impostata si brucia se riceve più del 20% in più
+   e non funziona se riceve più del 20% in meno. Senza tensione nominale funziona con qualsiasi tensione. */
+const RATED = {};
+function initRated() {
+  for (const [id, d] of Object.entries(DEF)) {
+    if (d.id !== id || !d.sim || typeof d.sim.eval !== 'function') continue;
+    const src = String(d.sim.eval);
+    if (!src.includes('X.load()')) continue;
+    const pairs = new Set([...src.matchAll(/X\.v\(c, '([^']+)', '([^']+)'\)/g)].map(m => m[1] + '|' + m[2]).filter(p => !/(^|\|)(FW|RV|COM)(\||$)/.test(p)));
+    if (!pairs.size && !/X\.v\(c, inputs/.test(src)) continue;
+    RATED[id] = pairs;
+    d.props = Object.assign({ vn: '' }, d.props);
+  }
+}
+const VN_OPTS = [['', 'Qualsiasi (non controllare)'], ['12', '12 V'], ['24', '24 V'], ['48', '48 V'], ['110', '110 V'], ['230', '230 V'], ['400', '400 V']];
+function ratedOK(c, X, a, b, A, B) {
+  const vn = +c.props.vn, P = RATED[c.type];
+  if (!vn || !P || (P.size && !P.has(a + '|' + b))) return true;
+  const D = X.dev(c);
+  if (D.burnt) { X.disp(c, { burnt: true }); return false; }
+  const v = voltsOf(A, B);
+  if (v == null || !v) return true;
+  const msg = SIM.S.vmsg || (SIM.S.vmsg = {}), nm = c.name || DEF[c.type].label;
+  if (v > vn * 1.2) {
+    D.burnt = true; X.disp(c, { burnt: true });
+    if (!msg[c.id]) { msg[c.id] = 1; setTimeout(() => toast(`${nm} si è bruciato: riceve ${fmtV(v)} V ma la sua tensione nominale è ${fmtV(vn)} V.`, 'err'), 0); }
+    return false;
+  }
+  if (v < vn * 0.8) {
+    X.disp(c, { low: true, lowV: v });
+    if (!msg[c.id]) { msg[c.id] = 1; setTimeout(() => toast(`${nm} non funziona: riceve ${fmtV(v)} V ma ne servono ${fmtV(vn)}.`), 0); }
+    return false;
+  }
+  return true;
+}
 /* ---------- context ---------- */
 function makeX() {
   const S = SIM.S, T = SIM.topo;
@@ -8,7 +44,7 @@ function makeX() {
     S,
     pots: (c, tid) => net(T.I(c, tid)),
     root: (c, tid) => { const i = T.I(c, tid); return i == null || !SIM.cur ? -1 - Math.random() : T.find(SIM.cur.p, i); },
-    v: (c, a, b) => voltOf(X.pots(c, a), X.pots(c, b)),
+    v: (c, a, b) => { const A = X.pots(c, a), B = X.pots(c, b); return voltOf(A, B) && ratedOK(c, X, a, b, A, B); },
     hi: (c, tid) => isHi(X.pots(c, tid)),
     hiRel: (c, a, b) => voltOf(X.pots(c, a), X.pots(c, b)),
     phRaw: (c, tid) => X.pots(c, tid).find(p => POTS[p].kind === 'L' && POTS[p].ph != null),
@@ -98,6 +134,13 @@ function startSim() {
   for (const c of SIM.topo.comps) {
     const s = DEF[c.type].sim;
     if (s && s.sys) { const nm = c.name || DEF[c.type].label, kn = c.type === 'stepdrv' ? ['A+', 'A−', 'B+', 'B−'] : ['L1', 'L2', 'L3', 'N']; SIM.sysPots[c.id] = s.sys(c).map(([kind, ph], i) => mkPot(`${nm}:${kind === 'N' ? 'N' : kn[i]}`, (c.type === 'stepdrv' ? 'st' : 'sys_') + c.id, kind, ph, c.id)); }
+  }
+  VSYS.vc = clamp(+doc.meta.vc || 400, 1, 100000); VSYS.vdc = clamp(+doc.meta.vdc || 24, 0.1, 100000); VSYS.own = {};
+  POTS[PT.P].name = `+${fmtV(VSYS.vdc)}V`;
+  for (const c of SIM.topo.comps) {
+    if (c.type === 'trafo1') VSYS.own[c.id] = { ll: +c.props.vs || 24, ln: +c.props.vs || 24 };
+    else if (c.type === 'trafo3') { const vs = +c.props.vs || 400; VSYS.own[c.id] = { ll: vs, ln: vLN(vs) }; }
+    else if (DEF[c.type].sim && DEF[c.type].sim.sys && c.type !== 'stepdrv') VSYS.own[c.id] = { ll: VSYS.vc, ln: vLN(VSYS.vc) };
   }
   SIM.claimed = new Set(); SIM.outClaimed = new Set();
   for (const c of SIM.topo.comps) { claimsOf(c).forEach(k => SIM.claimed.add(k)); outClaimsOf(c).forEach(k => SIM.outClaimed.add(k)); }

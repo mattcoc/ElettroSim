@@ -23,6 +23,7 @@ function initOffline() {
 /* ---------- init ---------- */
 function init() {
   const st = document.createElement('style'); st.textContent = SHEET_CSS; document.head.appendChild(st);
+  initRated();
   buildLIB(); buildLibrary();
   $('#libq').addEventListener('input', filterLib);
   $('#libq').addEventListener('keydown', e => { if (e.key === 'Escape' && e.target.value) { e.preventDefault(); e.stopPropagation(); e.target.value = ''; filterLib(); } });
