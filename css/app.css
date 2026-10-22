@@ -290,6 +290,8 @@ a.pbtn{text-decoration:none;color:inherit}
 .settabs button.on{background:var(--accent-soft);color:var(--accent)}
 .setpane{display:grid;gap:14px}
 .updbar{position:fixed;left:50%;top:calc(10px + env(safe-area-inset-top,0px));transform:translateX(-50%);z-index:65;display:flex;align-items:center;gap:12px;padding:8px 8px 8px 14px;border-radius:10px;background:var(--fg);color:var(--bg);box-shadow:var(--shadow);font-size:12.5px;max-width:calc(100% - 24px);animation:tin .2s ease-out}
+.updbar>span{flex:1;min-width:0}
+@media (max-width:560px){.updbar{left:10px;right:10px;transform:none;flex-wrap:wrap;gap:8px}.updbar>span{flex-basis:100%}}
 .updbar .pbtn{height:28px;background:transparent;color:inherit;border-color:rgba(127,127,127,.5)}
 .updbar .pbtn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-fg)}
 

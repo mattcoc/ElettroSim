@@ -352,6 +352,8 @@ function ctlText(c, mode, k) {
   if (d.sensor) return on ? ['Rileva', 'on'] : ['Libero', ''];
   return on ? ['Azionato', 'on'] : ['A riposo', ''];
 }
+// stato dovuto alla tensione nominale: bruciato o alimentato con tensione troppo bassa
+function vTxt(st, txt, fem) { return st.burnt ? (fem ? 'bruciata: tensione troppo alta' : 'bruciato: tensione troppo alta') : st.low ? `tensione insufficiente (${fmtV(st.lowV)} V)` : txt; }
 function updateSimPanel() {
   if (!SIM.on || !SIM.S) return;
   const el = $('#props'), S = SIM.S;
@@ -369,14 +371,14 @@ function updateSimPanel() {
     if (c.type === 'counter') txt += ` · conteggio ${st.n || 0}/${c.props.preset}`;
     if (c.type === 'coil_tele' || c.type === 'coil_bist') txt = S.lat[k] ? 'contatti azionati' : 'contatti a riposo';
     if (d.variant === 'fl' || d.variant === 'pulse' || d.variant === 'clock') txt += st.q ? ' · uscita chiusa' : '';
-    r.querySelector('[data-txt]').textContent = txt;
+    r.querySelector('[data-txt]').textContent = vTxt(st, txt, true);
     const bar = r.querySelector('.tbar i');
     if (bar) { const tot = d.variant === 'off' || (d.variant === 'onoff' && !st.on) ? (+c.props.t2 || +c.props.t || 1) : (+c.props.t || 1); bar.style.width = (st.rem != null ? Math.round(clamp(1 - st.rem / tot, 0, 1) * 100) : (tm && (tm.on || tm.onoff) ? 100 : 0)) + '%'; }
   });
   $$('[data-mot]', el).forEach(r => {
     const st = SIM.disp[r.dataset.mot] || {};
     r.querySelector('.led').className = 'led' + (st.run ? ' g' : st.two ? ' on' : '');
-    r.querySelector('[data-txt]').textContent = st.run ? `gira in senso ${st.dir < 0 ? 'antiorario' : 'orario'}${st.mode ? ' · ' + st.mode : ''}${st.hz && st.hz !== 50 ? ` · ${fmtNum(st.hz)} Hz` : ''}` : st.two ? 'alimentato su 2 fasi: non parte' : 'fermo';
+    r.querySelector('[data-txt]').textContent = st.burnt || st.low ? vTxt(st, '', false) : st.run ? `gira in senso ${st.dir < 0 ? 'antiorario' : 'orario'}${st.mode ? ' · ' + st.mode : ''}${st.hz && st.hz !== 50 ? ` · ${fmtNum(st.hz)} Hz` : ''}` : st.two ? 'alimentato su 2 fasi: non parte' : 'fermo';
   });
   $$('[data-cyl]', el).forEach(r => {
     const st = SIM.disp[r.dataset.cyl] || {}, p = st.p || 0;
@@ -390,7 +392,7 @@ function updateSimPanel() {
     const lit = st.on && (c.type !== 'lamp_fl' || st.blink);
     led.className = 'led'; led.style.background = lit ? (LAMP_COL[c.props.color] || '#c2611f') : ''; led.style.boxShadow = lit ? '0 0 0 3px rgba(0,0,0,.08)' : '';
     const sound = c.type === 'horn' || c.type === 'buzzer';
-    r.querySelector('[data-txt]').textContent = st.on ? (sound ? 'suona' : c.type === 'lamp_fl' ? 'lampeggia' : 'accesa') : (sound ? 'muta' : 'spenta');
+    r.querySelector('[data-txt]').textContent = vTxt(st, st.on ? (sound ? 'suona' : c.type === 'lamp_fl' ? 'lampeggia' : 'accesa') : (sound ? 'muta' : 'spenta'), !sound);
   });
   $$('[data-cpu]', el).forEach(r => {
     const c = cmap().get(r.dataset.cpu), st = SIM.disp[r.dataset.cpu] || {};

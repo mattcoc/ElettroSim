@@ -1,9 +1,8 @@
 {
-  "version": "1.2.0",
+  "version": "1.2.1",
   "notes": [
-    "Tensioni di rete e continua modificabili, tensione nominale dei carichi",
-    "Impostazioni: tema chiaro/scuro, colore, pannelli",
-    "Pannelli laterali richiudibili e ridimensionabili",
-    "Accesso dalla versione desktop tramite il browser"
+    "Corretto: con un cortocircuito cilindri, contatori e preselettori non venivano più disegnati",
+    "Il pannello di simulazione indica i componenti bruciati o con tensione insufficiente",
+    "Avviso di aggiornamento leggibile anche sul telefono"
   ]
 }

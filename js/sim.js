@@ -249,7 +249,8 @@ function computeDisp(X) {
   for (const c of SIM.topo.comps) if (DEF[c.type].motor && SIM.nd[c.id]) motorsByName.set(nkey(c), SIM.nd[c.id]);
   for (const c of SIM.topo.comps) {
     const d = DEF[c.type], k = nkey(c);
-    const o = Object.assign({}, SIM.nd[c.id] || {});
+    // durante un cortocircuito il calcolo si interrompe: si conserva l’ultimo stato visualizzato
+    const o = Object.assign({}, SIM.fault && SIM.disp[c.id] || {}, SIM.nd[c.id] || {});
     const L = linksOf(c);
     L.forEach((l, i) => { let v = false; try { v = !!l.on(c, X); } catch (e) { v = false; } o['l' + i] = v; });
     if (L.length) o.closed = o.l0;

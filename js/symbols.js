@@ -657,7 +657,7 @@ function selector(id, label, n, startPos) {
       s += ln(-12, 0, bladeX0((n - 1) * 20, 'no', false), 0, 'd') + pa('M-12,-5 L-15,-5 L-15,5 L-18,5');
       return s;
     },
-    inner: (c, st) => { const p = st ? st.pos : (c.props.pos ?? startPos); return [{ x: -16, y: -12, t: POSN.map((t, i) => i === p ? `[${t}]` : t).join(' '), cls: 'lbl-pin' }]; },
+    inner: (c, st) => { const p = st && st.pos != null ? st.pos : (c.props.pos ?? startPos); return [{ x: -16, y: -12, t: POSN.map((t, i) => i === p ? `[${t}]` : t).join(' '), cls: 'lbl-pin' }]; },
     sim: {
       links: () => Array.from({ length: n }, (_, i) => ({ a: 'a' + (i + 1), b: 'b' + (i + 1), on: (c, X) => { const p = X.posOf(c, startPos); return n === 2 ? (i === 0 ? p === 0 : p === 2) : p === i; } })),
       eval: (c, X) => X.disp(c, { pos: X.posOf(c, startPos) }),
@@ -781,7 +781,7 @@ def('counter', {
   cat: 'coil', label: 'Contatore di impulsi', prefix: 'KC', autoNum: true, desc: 'Conta gli impulsi su A1-A2; R1-R2 azzera. I contatti si azionano al raggiungimento del valore impostato.', isCoil: true,
   terms: [T('a', 0, -20, 'n', 'A1'), T('b', 0, 20, 's', 'A2'), T('r1', 20, -20, 'n', 'R1'), T('r2', 20, 20, 's', 'R2')], box: [-9, -20, 29, 20], nameAt: [-10, 0, 'w'], props: { preset: 5 },
   draw: (c, st) => coilSym(null, st && st.on) + `<g transform="translate(20,0)">${coilSym(null, st && st.r)}</g>`,
-  inner: (c, st) => [{ x: 10, y: -12, t: `${st ? st.n : 0}/${c.props.preset}`, cls: 'lbl-timer' }, { x: 20, y: 0, t: 'R', cls: 'lbl-pin' }],
+  inner: (c, st) => [{ x: 10, y: -12, t: `${st && st.n != null ? st.n : 0}/${c.props.preset}`, cls: 'lbl-timer' }, { x: 20, y: 0, t: 'R', cls: 'lbl-pin' }],
   sim: {
     eval: (c, X) => { const D = X.dev(c); D.e = X.v(c, 'a', 'b'); D.r = X.v(c, 'r1', 'r2'); if (D.e) X.load(); },
     tick: (c, X) => {
@@ -1037,7 +1037,7 @@ def('l_presel', {
   cat: 'logic', label: 'Preselettore (contraves)', prefix: 'SP', autoNum: true, desc: 'Imposta una cifra da 0 a 9 sulle uscite 1-2-4-8. In simulazione ogni clic aumenta la cifra.',
   terms: [T('A', 40, 0, 'e', '1'), T('B', 40, 20, 'e', '2'), T('C', 40, 40, 'e', '4'), T('D', 40, 60, 'e', '8')], box: [0, -10, 40, 70], nameAt: [-2, 30, 'w'], termLabels: false, props: { val: 0 }, act: 'digit',
   draw: (c, st) => re(0, -10, 30, 80) + [0, 20, 40, 60].map(y => ln(30, y, 40, y)).join('') + re(6, 18, 18, 24, 'box-on') + pa('M10,12 L15,7 L20,12') + pa('M10,48 L15,53 L20,48'),
-  inner: (c, st) => [{ x: 15, y: 30, t: String(st ? st.v : (c.props.val || 0)), cls: 'lbl-in' }, ...[['1', 0], ['2', 20], ['4', 40], ['8', 60]].map(([t, y]) => ({ x: 27, y, t, cls: 'lbl-pin', anchor: 'end' }))],
+  inner: (c, st) => [{ x: 15, y: 30, t: String(st && st.v != null ? st.v : (c.props.val || 0)), cls: 'lbl-in' }, ...[['1', 0], ['2', 20], ['4', 40], ['8', 60]].map(([t, y]) => ({ x: 27, y, t, cls: 'lbl-pin', anchor: 'end' }))],
   sim: { eval: (c, X) => { const v = X.digitOf(c); X.dev(c).v = v; X.disp(c, { v }); }, src: (c, X) => { const v = X.dev(c).v || 0, r = {}; if (v & 1) r.A = PT.P; if (v & 2) r.B = PT.P; if (v & 4) r.C = PT.P; if (v & 8) r.D = PT.P; return r; } },
 });
 def('netlabel', {
@@ -1270,7 +1270,7 @@ function cylDef(id, label, opt) {
     cat: 'pneu', label, prefix: 'A', autoNum: false, desc: opt.desc, pneu: true,
     terms: [], box: [-12, -26, 146, 46], nameAt: [-12, 0, 'w'], props: Object.assign({ valve: opt.single ? 'mono' : 'bist', v1: 50, v2: 50, plus: '', minus: '', s0: '', s1: '', sm: '' }, opt.props || {}),
     draw: (c, st) => {
-      const p = st ? st.p : 0, N = pneuNames(c);
+      const p = st && Number.isFinite(st.p) ? st.p : 0, N = pneuNames(c);
       let s = '';
       if (opt.kind === 'rodless') {
         s += re(0, -8, 120, 16) + re(6 + p * 88, -18, 20, 10, 'piston') + ln(0, 0, 120, 0, 'd');
