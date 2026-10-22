@@ -29,7 +29,7 @@ function fitView() {
 
 /* ---------- hit testing ---------- */
 function hitTerm(w, rpx) {
-  const rr = (rpx || 8) / ui.view.z;
+  const rr = (rpx || (ui.touch ? 18 : 8)) / ui.view.z;
   let best = null, bd = rr * rr;
   for (const c of doc.comps) for (const t of termsW(c)) {
     const dx = t.x - w.x, dy = t.y - w.y, d2 = dx * dx + dy * dy;
@@ -283,9 +283,16 @@ function updateHint() {
 /* ---------- pointer handling ---------- */
 function onDown(e) {
   const cv = $('#cv');
+  ui.touch = e.pointerType === 'touch' || e.pointerType === 'pen';
+  cancelLongPress();
+  if (ui.touch && !SIM.on && !ui.place && ui.pointers.size === 0) {
+    const cx = e.clientX, cy = e.clientY;
+    ui.lp = { x: cx, y: cy, t: setTimeout(() => longPress(cx, cy), 480) };
+  }
   if (e.pointerType === 'touch') {
     ui.pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
     if (ui.pointers.size === 2) {
+      cancelLongPress();
       const [p1, p2] = [...ui.pointers.values()];
       ui.pinch = { d: Math.hypot(p1.x - p2.x, p1.y - p2.y), cx: (p1.x + p2.x) / 2, cy: (p1.y + p2.y) / 2 };
       ui.drag = null; ui.band = null; ui.shapeDraft = null;
@@ -297,7 +304,7 @@ function onDown(e) {
   const w = toWorld(e.clientX, e.clientY);
   ui.mouse = { x: w.x, y: w.y, in: true };
   if (e.button === 1 || ui.space) { ui.drag = { kind: 'pan', cx: e.clientX, cy: e.clientY, vx: ui.view.x, vy: ui.view.y }; cv.classList.add('c-pan'); return; }
-  if (e.button === 2) { if (ui.draft) { ui.draft = null; updateHint(); render(); } return; }
+  if (e.button === 2) { if (ui.draft) { ui.draft = null; updateHint(); render(); } else if (!SIM.on && !ui.place) ctxMenu(e.clientX, e.clientY); return; }
   if (e.button !== 0) return;
   if (SIM.on) {
     const c = hitComp(w, true);
@@ -337,6 +344,7 @@ function onDown(e) {
   render();
 }
 function onMove(e) {
+  if (ui.lp && Math.hypot(e.clientX - ui.lp.x, e.clientY - ui.lp.y) > 10) cancelLongPress();
   if (ui.pointers.has(e.pointerId)) {
     ui.pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
     if (ui.pinch && ui.pointers.size === 2) {
@@ -376,6 +384,52 @@ function onMove(e) {
   hoverInfo(w, ui.hoverTerm ? null : hitComp(w));
   if (ui.draft || ui.place || !prev !== !ui.hoverTerm || (prev && ui.hoverTerm && (prev.c !== ui.hoverTerm.c || prev.t !== ui.hoverTerm.t))) render();
 }
+/* ---------- menu contestuale (tasto destro o pressione lunga sul telefono) ---------- */
+function cancelLongPress() { if (ui.lp) { clearTimeout(ui.lp.t); ui.lp = null; } }
+function longPress(cx, cy) {
+  ui.lp = null;
+  const D = ui.drag;
+  if (D && D.kind === 'move' && D.moved) return;
+  ui.drag = null; ui.draft = null; ui.band = null;
+  $('#cv').classList.remove('c-pan', 'c-move');
+  try { if (navigator.vibrate) navigator.vibrate(12); } catch (e) { /* vibrazione non disponibile */ }
+  updateHint();
+  ctxMenu(cx, cy);
+}
+function ctxMenu(cx, cy) {
+  const w = toWorld(cx, cy), hc = hitComp(w), hw = hc ? null : hitWire(w);
+  const hitId = hc ? hc.id : hw ? hw.w.id : null;
+  if (hitId && !ui.sel.has(hitId)) { ui.sel = new Set([hitId]); refreshPanels(); }
+  render();
+  const anchor = { getBoundingClientRect: () => ({ left: cx, right: cx, top: cy, bottom: cy }) };
+  const props = () => { if (window.innerWidth <= 860) { $('#lib').classList.remove('open'); $('#propsPanel').classList.add('open'); } };
+  const dup = () => { if (copySel()) { const m = ui.mouse.in; ui.mouse.in = false; pasteClip(); ui.mouse.in = m; } };
+  const cs = selComps(), ws = selWires();
+  if (hc) {
+    menu(anchor, [
+      { h: cs.length + ws.length > 1 ? `${cs.length + ws.length} elementi` : (hc.name ? `${DEF[hc.type].label} ${hc.name}` : DEF[hc.type].label) },
+      { t: 'Ruota', k: 'R', f: rotateSel }, { t: 'Specchia', k: 'M', f: flipSel },
+      { t: 'Duplica', k: 'Ctrl+D', f: dup }, { t: 'Copia', k: 'Ctrl+C', f: () => { if (copySel()) toast('Copiato'); } },
+      '-', { t: 'Proprietà…', f: props }, { t: 'Salva come blocco…', f: saveSelAsBlock },
+      '-', { t: 'Elimina', k: 'Canc', f: deleteSel },
+    ]);
+  } else if (hw) {
+    menu(anchor, [
+      { h: 'Cavo' },
+      { t: 'Raddrizza percorso', f: () => { hw.w.pts = []; commit({ keepProps: true }); } },
+      { t: 'Colore e proprietà…', f: props },
+      '-', { t: 'Elimina', k: 'Canc', f: deleteSel },
+    ]);
+  } else {
+    if (ui.sel.size) { ui.sel.clear(); refreshPanels(); render(); }
+    menu(anchor, [
+      { t: 'Incolla', k: 'Ctrl+V', dis: !(ui.clip && ui.clip.comps.length), f: () => { ui.mouse = { x: w.x, y: w.y, in: true }; pasteClip(); } },
+      { t: 'Seleziona tutto', k: 'Ctrl+A', f: selectAll },
+      { t: 'Adatta al foglio', k: '0', f: fitView },
+      '-', { t: 'Impostazioni del foglio', f: () => { refreshPanels(); props(); } },
+    ]);
+  }
+}
 function finishShape() {
   const S = ui.shapeDraft; ui.shapeDraft = null;
   if (!S) return;
@@ -393,6 +447,7 @@ function finishShape() {
   commit();
 }
 function onUp(e) {
+  cancelLongPress();
   ui.pointers.delete(e.pointerId);
   if (ui.pinch && ui.pointers.size < 2) { ui.pinch = null; return; }
   const D = ui.drag;

@@ -82,7 +82,7 @@ function openHelp() {
       <dt><kbd>Spazio</kbd>+trascina</dt><dd>Sposta la vista</dd><dt><kbd>Pag↑</kbd> <kbd>Pag↓</kbd></dt><dd>Cambia foglio</dd>
       <dt><kbd>F9</kbd></dt><dd>Avvia / ferma la simulazione</dd><dt><kbd>P</kbd> <kbd>N</kbd></dt><dd>Pausa, passo</dd>
     </dl>
-    <p class="note">Su tablet e telefono: due dita per zoomare, un dito sul foglio vuoto per spostare la vista. Il lavoro viene salvato automaticamente in questo browser.</p>`,
+    <p class="note">Su tablet e telefono: due dita per zoomare, un dito sul foglio vuoto per spostare la vista, tieni premuto un elemento per aprire il suo menu (anche il tasto destro del mouse lo apre). Il lavoro viene salvato automaticamente in questo browser.</p>`,
     '<button class="pbtn" data-ex>Apri un esempio</button><button class="pbtn primary" data-c>Ho capito</button>', true);
   m.querySelector('[data-c]').onclick = closeModal;
   m.querySelector('[data-ex]').onclick = () => { closeModal(); $('#bEx').click(); };

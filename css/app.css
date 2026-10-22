@@ -289,5 +289,6 @@ details.cat.recent summary .t{color:var(--accent)}
   .f input[type=text],.f input[type=number],.f select{height:38px}
   .tab{height:34px}
   .menu button{height:40px}
+  .menu button .kbd{display:none}
 }
 @media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
