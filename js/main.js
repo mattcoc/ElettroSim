@@ -47,6 +47,7 @@ function init() {
     { t: 'Esporta disegno SVG (foglio attuale)', f: exportSVG },
     '-',
     { t: 'Salva selezione come blocco…', dis: SIM.on || !selComps().length, f: saveSelAsBlock },
+    { t: 'Impostazioni…', k: 'Ctrl+,', f: openSettings },
     { t: 'Guida e scorciatoie', k: 'F1', f: openHelp },
     ...(isStandalone() ? [] : [{ t: 'Installa l’app (funziona offline)…', f: installApp }]),
     { t: 'Impostazioni del foglio', f: () => { ui.sel.clear(); refreshPanels(); render(); if (window.innerWidth <= 860) $('#propsPanel').classList.add('open'); } },
@@ -70,9 +71,7 @@ function init() {
   $('#bSim').onclick = toggleSim;
   $('#bPause').onclick = togglePause; $('#bStep').onclick = stepOnce;
   $('#speed').onchange = e => { SIM.speed = +e.target.value || 1; };
-  $('#bLib').onclick = () => { $('#propsPanel').classList.remove('open'); $('#lib').classList.toggle('open'); };
-  $('#bProps').onclick = () => { $('#lib').classList.remove('open'); $('#propsPanel').classList.toggle('open'); };
-  $$('[data-close]').forEach(b => b.onclick = () => $('#' + b.dataset.close).classList.remove('open'));
+  initSettings();
   const cv = $('#cv');
   cv.addEventListener('pointerdown', onDown);
   cv.addEventListener('pointermove', onMove);
@@ -91,8 +90,8 @@ function init() {
   window.addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(() => { if (!ui.userView) fitView(); else render(); }, 60); });
   let loaded = false;
   const saved = LS.get('elettrosim.current');
-  if (saved) { try { doc = validateDoc(JSON.parse(saved)); loaded = true; } catch (e) { loaded = false; } }
-  if (!loaded) doc = buildExample('diretto');
+  if (saved && PREFS.startup === 'last') { try { doc = validateDoc(JSON.parse(saved)); loaded = true; } catch (e) { loaded = false; } }
+  if (!loaded) doc = PREFS.startup === 'empty' && saved ? newDoc() : buildExample('diretto');
   touch();
   resetHistory();
   renderTabs();

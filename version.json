@@ -1,0 +1,9 @@
+{
+  "version": "1.2.0",
+  "notes": [
+    "Tensioni di rete e continua modificabili, tensione nominale dei carichi",
+    "Impostazioni: tema chiaro/scuro, colore, pannelli",
+    "Pannelli laterali richiudibili e ridimensionabili",
+    "Accesso dalla versione desktop tramite il browser"
+  ]
+}

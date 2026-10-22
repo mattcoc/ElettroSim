@@ -1,7 +1,9 @@
 /* ElettroSim · Documento, fogli, geometria dei componenti, percorsi dei cavi e topologia. */
 'use strict';
 function today() { try { return new Date().toLocaleDateString('it-IT'); } catch (e) { return ''; } }
-function newMeta() { return { title: 'Nuovo schema', author: '', school: '', date: today(), sheet: 'A4', num: '1', of: '1', dash: true, grid: true, tb: true, xref: false, wnum: false, clock: '08:00', vc: 400, vdc: 24 }; }
+function newMeta() { return { title: 'Nuovo schema', author: '', school: '', date: today(), sheet: 'A4', num: '1', of: '1', dash: true, grid: true, tb: true, xref: false, wnum: false, clock: '08:00', vc: prefNum('vc', 400), vdc: prefNum('vdc', 24) }; }
+// legge una preferenza numerica direttamente dal browser (serve già al caricamento, prima delle impostazioni)
+function prefNum(k, d) { try { const v = +JSON.parse(localStorage.getItem('elettrosim.prefs') || '{}')[k]; return v > 0 ? v : d; } catch (e) { return d; } }
 function wrapDoc(d) {
   if (!Object.getOwnPropertyDescriptor(d, 'comps')) {
     Object.defineProperty(d, 'comps', { get() { return this.pages[this.page].comps; }, set(v) { this.pages[this.page].comps = v; }, enumerable: false, configurable: true });

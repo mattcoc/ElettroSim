@@ -246,7 +246,7 @@ function bindDocProps() {
   bindVoltFields();
   const ck = $('#mClock');
   if (ck) ck.onchange = () => { const m = /^(\d{1,2})[:.](\d{2})$/.exec(ck.value.trim()); if (!m || +m[1] > 23 || +m[2] > 59) { toast('Scrivi l’ora come hh:mm, ad esempio 08:00.', 'err'); ck.value = M.clock || '08:00'; return; } M.clock = m[1].padStart(2, '0') + ':' + m[2]; ck.value = M.clock; commit({ keepProps: true }); };
-  const wc = $('#mWcol'); if (wc) wc.onchange = () => { ui.wireColor = wc.value; };
+  const wc = $('#mWcol'); if (wc) wc.onchange = () => { ui.wireColor = wc.value; PREFS.wireColor = wc.value; savePrefs(); };
   $$('[data-pgo]').forEach(li => li.onclick = () => switchPage(+li.dataset.pgo));
   const mh = $('#mHelp'); if (mh) mh.onclick = openHelp;
   const ap = $('#mAddPg'); if (ap) ap.onclick = addPage;

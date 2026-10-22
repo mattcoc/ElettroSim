@@ -63,6 +63,7 @@
     <div class="grp edit-only">
       <button class="btn" id="bCheck" title="Verifica lo schema"><svg viewBox="0 0 24 24"><path d="M4 12l5 5L20 6"/></svg><span class="hide-sm">Verifica</span><span class="badge ok" id="chkBadge">0</span></button>
     </div>
+    <button class="btn acc hide-sm ico" id="bSettings" title="Impostazioni" aria-label="Impostazioni"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 00.3 1.8l.1.1a2 2 0 11-2.8 2.8l-.1-.1a1.7 1.7 0 00-1.8-.3 1.7 1.7 0 00-1 1.5V21a2 2 0 11-4 0v-.1a1.7 1.7 0 00-1.1-1.5 1.7 1.7 0 00-1.8.3l-.1.1a2 2 0 11-2.8-2.8l.1-.1a1.7 1.7 0 00.3-1.8 1.7 1.7 0 00-1.5-1H3a2 2 0 110-4h.1a1.7 1.7 0 001.5-1.1 1.7 1.7 0 00-.3-1.8l-.1-.1a2 2 0 112.8-2.8l.1.1a1.7 1.7 0 001.8.3H9a1.7 1.7 0 001-1.5V3a2 2 0 114 0v.1a1.7 1.7 0 001 1.5 1.7 1.7 0 001.8-.3l.1-.1a2 2 0 112.8 2.8l-.1.1a1.7 1.7 0 00-.3 1.8V9a1.7 1.7 0 001.5 1H21a2 2 0 110 4h-.1a1.7 1.7 0 00-1.5 1z"/></svg></button>
     <button class="btn acc hide-sm" id="bCoop" title="Lavora insieme sullo stesso schema" hidden><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0113 0"/><circle cx="17" cy="9" r="2.8"/><path d="M16 14.2a5.5 5.5 0 016 5.8"/></svg><span>Lavora insieme</span></button>
     <button class="btn acc" id="bAcc" title="Account" hidden><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0116 0"/></svg><span class="hide-sm" id="accName">Accedi</span></button>
     <button class="simbtn" id="bSim" title="Avvia o ferma la simulazione (F9)"><svg viewBox="0 0 24 24"><path d="M7 4l13 8-13 8z"/></svg><span>Simula</span></button>
@@ -70,7 +71,7 @@
 
   <main class="main">
     <aside class="panel side" id="lib" aria-label="Libreria componenti">
-      <div class="ph"><h2>Componenti</h2><button class="btn ico closep" data-close="lib" title="Chiudi"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+      <div class="ph"><h2>Componenti</h2><div class="phbtns"><button class="btn ico closep" data-close="lib" title="Nascondi la libreria" aria-label="Nascondi la libreria"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div></div><div class="resizer" data-rs="lib" title="Trascina per cambiare la larghezza"></div>
       <div class="search"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg><input id="libq" type="search" placeholder="Cerca: contattore, PLC, cilindro…" autocomplete="off" aria-label="Cerca componenti"><button class="sclear" id="libqX" title="Cancella la ricerca" aria-label="Cancella la ricerca" hidden>×</button></div>
       <p class="libtip">Clicca un simbolo e poi il foglio, oppure trascinalo.</p>
       <div class="pb" id="libList"></div>
@@ -99,7 +100,7 @@
     </div>
 
     <aside class="panel side" id="propsPanel" aria-label="Proprietà">
-      <div class="ph"><h2 id="propsTitle">Proprietà</h2><button class="btn ico closep" data-close="propsPanel" title="Chiudi"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+      <div class="ph"><h2 id="propsTitle">Proprietà</h2><div class="phbtns"><button class="btn ico closep" data-close="propsPanel" title="Nascondi il pannello" aria-label="Nascondi il pannello"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div></div><div class="resizer" data-rs="props" title="Trascina per cambiare la larghezza"></div>
       <div class="pb" id="props"></div>
     </aside>
   </main>
@@ -114,6 +115,7 @@
 <input type="file" id="fileIn" accept=".json,application/json" hidden>
 <input type="file" id="imgIn" accept="image/png,image/jpeg,image/gif,image/webp,image/svg+xml" hidden>
 <div class="toasts" id="toasts" aria-live="polite"></div>
+<script src="js/version.js"></script>
 <script src="js/config.js"></script>
 <script src="js/util.js"></script>
 <script src="js/symbols.js"></script>
@@ -127,6 +129,7 @@
 <script src="js/files.js"></script>
 <script src="js/coop.js"></script>
 <script src="js/examples.js"></script>
+<script src="js/settings.js"></script>
 <script src="js/main.js"></script>
 
 </body></html>

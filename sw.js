@@ -1,13 +1,13 @@
 /* ElettroSim · service worker: tiene una copia dell'app sul dispositivo, così si apre anche senza connessione.
    Online prende sempre la versione più recente dalla rete (e aggiorna la copia), offline usa la copia salvata.
    Quando aggiungi un file all'app, aggiungilo anche a ASSETS e aumenta VERSION. */
-const VERSION = 'v1';
+const VERSION = 'v2';
 const CACHE = 'elettrosim-' + VERSION;
 const ASSETS = [
   './', 'index.html', 'manifest.webmanifest', 'icon.svg', 'icon-192.png', 'icon-512.png',
   'css/fonts.css', 'css/app.css',
-  'js/config.js', 'js/util.js', 'js/symbols.js', 'js/model.js', 'js/render.js', 'js/history.js', 'js/sim.js',
-  'js/editor.js', 'js/ui.js', 'js/panels.js', 'js/files.js', 'js/coop.js', 'js/examples.js', 'js/main.js',
+  'js/version.js', 'js/config.js', 'js/util.js', 'js/symbols.js', 'js/model.js', 'js/render.js', 'js/history.js', 'js/sim.js',
+  'js/editor.js', 'js/ui.js', 'js/panels.js', 'js/files.js', 'js/coop.js', 'js/examples.js', 'js/settings.js', 'js/main.js',
   'fonts/ibm-plex-sans-latin-400-normal.woff2', 'fonts/ibm-plex-sans-latin-500-normal.woff2', 'fonts/ibm-plex-sans-latin-600-normal.woff2',
   'fonts/ibm-plex-sans-condensed-latin-400-normal.woff2', 'fonts/ibm-plex-sans-condensed-latin-500-normal.woff2', 'fonts/ibm-plex-sans-condensed-latin-600-normal.woff2',
   'fonts/ibm-plex-mono-latin-400-normal.woff2', 'fonts/ibm-plex-mono-latin-500-normal.woff2',
