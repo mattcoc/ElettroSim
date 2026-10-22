@@ -94,7 +94,7 @@ function renderSetPane() {
       <div class="acts"><button class="pbtn" id="sResetW">Ripristina la larghezza dei pannelli</button></div>
       ${setChk('sHints', PREFS.hints, 'Mostra i suggerimenti sul foglio', 'Il riquadro in basso che spiega cosa fare con lo strumento scelto.')}`;
   } else if (setTab === 'edit') {
-    h = `<div class="f"><label for="sStart">All’apertura dell’app</label>${sel('sStart', PREFS.startup, [['last', 'Riapri l’ultimo schema'], ['example', 'Apri l’esempio di avviamento diretto'], ['empty', 'Inizia con un foglio vuoto']])}</div>
+    h = `<div class="f"><label for="sStart">All’apertura dell’app</label>${sel('sStart', PREFS.startup, [['last', 'Riapri l’ultimo schema (la prima volta: foglio vuoto)'], ['empty', 'Inizia sempre con un foglio vuoto'], ['example', 'Apri l’esempio di avviamento diretto']])}</div>
       <div class="f"><label for="sWire">Colore dei nuovi cavi</label>${sel('sWire', PREFS.wireColor, Object.keys(WIRE_COL).map(k => [k, k === 'auto' ? 'automatico (secondo il potenziale)' : k]))}</div>
       <div class="acts"><button class="pbtn" id="sHelp">Guida e scorciatoie da tastiera</button></div>`;
   } else if (setTab === 'sim') {

@@ -91,7 +91,7 @@ function init() {
   let loaded = false;
   const saved = LS.get('elettrosim.current');
   if (saved && PREFS.startup === 'last') { try { doc = validateDoc(JSON.parse(saved)); loaded = true; } catch (e) { loaded = false; } }
-  if (!loaded) doc = PREFS.startup === 'empty' && saved ? newDoc() : buildExample('diretto');
+  if (!loaded) doc = PREFS.startup === 'example' ? buildExample('diretto') : newDoc();
   touch();
   resetHistory();
   renderTabs();
@@ -99,7 +99,6 @@ function init() {
   updateModeUI();
   refreshPanels();
   requestAnimationFrame(() => { fitView(); drawNow(); });
-  if (!loaded) toast('Esempio caricato: premi Simula per provarlo.');
   if (!LS.get('elettrosim.seenHelp')) setTimeout(openHelp, 400);
   initCaps();
   initCloud();

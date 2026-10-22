@@ -1,7 +1,7 @@
 /* ElettroSim · service worker: tiene una copia dell'app sul dispositivo, così si apre anche senza connessione.
    Online prende sempre la versione più recente dalla rete (e aggiorna la copia), offline usa la copia salvata.
    Quando aggiungi un file all'app, aggiungilo anche a ASSETS e aumenta VERSION. */
-const VERSION = 'v4';
+const VERSION = 'v5';
 const CACHE = 'elettrosim-' + VERSION;
 const ASSETS = [
   './', 'index.html', 'manifest.webmanifest', 'icon.svg', 'icon-192.png', 'icon-512.png',
