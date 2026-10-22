@@ -59,6 +59,10 @@ button,input,select,textarea{font:inherit;color:inherit}
 .simbtn svg{width:16px;height:16px;fill:currentColor;stroke:none}
 .simbtn.stop{background:var(--danger)}
 .badge{min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:var(--warn-soft);color:var(--warn);font-size:11px;font-weight:600;display:inline-grid;place-items:center;font-variant-numeric:tabular-nums}
+.btn.acc{border:1px solid var(--line);background:var(--panel);height:34px;flex:none}
+.btn.acc img{width:22px;height:22px;border-radius:50%;flex:none}
+.btn.acc span{max-width:140px;overflow:hidden;text-overflow:ellipsis}
+.cloudbox{display:grid;gap:8px;padding:12px;border:1px dashed var(--line-2);border-radius:9px;background:var(--raise)}
 .badge.ok{background:var(--live-soft);color:var(--live)}
 .badge.err{background:var(--danger-soft);color:var(--danger)}
 select.sel{height:30px;border:1px solid var(--line);background:var(--raise);border-radius:6px;padding:0 6px}
@@ -304,6 +308,7 @@ details.cat.recent summary .t{color:var(--accent)}
         <option value="0.25">×0,25</option><option value="0.5">×0,5</option><option value="1" selected>×1</option><option value="2">×2</option><option value="5">×5</option><option value="10">×10</option>
       </select>
     </div>
+    <button class="btn acc" id="bAcc" title="Account" hidden><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0116 0"/></svg><span class="hide-sm" id="accName">Accedi</span></button>
     <button class="simbtn" id="bSim" title="Avvia o ferma la simulazione (F9)"><svg viewBox="0 0 24 24"><path d="M7 4l13 8-13 8z"/></svg><span>Simula</span></button>
   </header>
 
@@ -353,6 +358,11 @@ details.cat.recent summary .t{color:var(--accent)}
 <input type="file" id="imgIn" accept="image/png,image/jpeg,image/gif,image/webp,image/svg+xml" hidden>
 <div class="toasts" id="toasts" aria-live="polite"></div>
 <script>
+/* ---------- account (Firebase) ----------
+   Per attivare gli account con Google e il salvataggio online incolla qui la configurazione
+   del tuo progetto Firebase (Console Firebase › Impostazioni progetto › Le tue app › Config).
+   Con null la funzione resta nascosta e tutto viene salvato solo nel browser. */
+const FIREBASE_CONFIG = null;
 (() => {
 'use strict';
 const G = 10;
@@ -2275,6 +2285,7 @@ const LS = {
 function scheduleSave() {
   clearTimeout(saveTimer);
   saveTimer = setTimeout(() => { const ok = LS.set('elettrosim.current', snapshot()); const el = $('#stSave'); if (el) el.textContent = ok ? 'Salvato automaticamente nel browser' : 'Schema troppo grande per il salvataggio automatico: scarica il file'; }, 500);
+  cloudSchedule();
 }
 
 function validateComp(c, ids) {
@@ -2322,6 +2333,7 @@ function validateDoc(d) {
 function loadDoc(d, msg) {
   if (SIM.on) stopSim();
   doc = validateDoc(d); touch();
+  setCloudId(null);
   ui.sel.clear(); ui.draft = null; ui.place = null;
   resetHistory(); scheduleSave(); renderTabs(); refreshPanels(); fitView(); render();
   if (msg) toast(msg);
@@ -3195,7 +3207,7 @@ function onKey(e) {
   if (typing) { if (e.key === 'Escape') t.blur(); return; }
   if ($('#scrim')) { if (e.key === 'Escape') closeModal(); return; }
   if (e.key === ' ' && !ui.space) { ui.space = true; e.preventDefault(); return; }
-  if (mod && (e.key === 's' || e.key === 'S')) { e.preventDefault(); saveToBrowser(); return; }
+  if (mod && (e.key === 's' || e.key === 'S')) { e.preventDefault(); if (CLOUD.user) saveToCloud(); else saveToBrowser(); return; }
   if (SIM.on) {
     if (e.key === 'Escape') stopSim();
     else if (e.key === 'p' || e.key === 'P') togglePause();
@@ -3395,7 +3407,7 @@ function buildLIB() {
   });
 }
 function loadBlocks() { try { const b = JSON.parse(LS.get('elettrosim.blocks') || '[]'); return Array.isArray(b) ? b.filter(x => x && Array.isArray(x.comps)) : []; } catch (e) { return []; } }
-function saveBlocks(b) { if (!LS.set('elettrosim.blocks', JSON.stringify(b))) toast('Il browser non permette di salvare i blocchi.', 'err'); }
+function saveBlocks(b) { if (!LS.set('elettrosim.blocks', JSON.stringify(b))) toast('Il browser non permette di salvare i blocchi.', 'err'); cloudSaveBlocks(b); }
 let libOpen = null;
 function buildLibrary() {
   const box = $('#libList');
@@ -4138,19 +4150,154 @@ async function exportPDF() {
     await saveFile(slug(doc.meta.title) + '.pdf', pdf.output('blob'), 'application/pdf');
   } catch (e) { toast('Non è stato possibile creare il PDF.', 'err'); }
 }
+const CLOUD = { lib: null, user: null, id: null, timer: null, blkTimer: null, saving: false, again: false };
+const FB_URL = 'https://www.gstatic.com/firebasejs/10.12.2/';
+function cloudLib() {
+  if (!CLOUD.lib) CLOUD.lib = Promise.all(['firebase-app.js', 'firebase-auth.js', 'firebase-firestore.js'].map(f => import(FB_URL + f))).then(([A, U, F]) => {
+    const app = A.initializeApp(FIREBASE_CONFIG);
+    return { U, F, auth: U.getAuth(app), db: F.getFirestore(app) };
+  }).catch(e => { CLOUD.lib = null; throw e; });
+  return CLOUD.lib;
+}
+function setCloudId(id) {
+  CLOUD.id = id;
+  LS.set('elettrosim.cloudId', id && CLOUD.user ? JSON.stringify({ uid: CLOUD.user.uid, id }) : '');
+}
+function authErr(e) {
+  const c = (e && e.code) || '';
+  if (c === 'auth/popup-closed-by-user' || c === 'auth/cancelled-popup-request') return;
+  if (c === 'auth/unauthorized-domain') { toast('Questo indirizzo non è autorizzato: aggiungilo in Firebase › Authentication › Impostazioni › Domini autorizzati.', 'err'); return; }
+  if (c === 'auth/network-request-failed') { toast('Connessione assente: impossibile accedere.', 'err'); return; }
+  toast('Accesso non riuscito. Riprova.', 'err');
+}
+async function cloudSignIn() {
+  let L;
+  try { L = await cloudLib(); } catch (e) { toast('Impossibile caricare il servizio di accesso. Controlla la connessione.', 'err'); return; }
+  const prov = new L.U.GoogleAuthProvider();
+  prov.setCustomParameters({ prompt: 'select_account' });
+  try { await L.U.signInWithPopup(L.auth, prov); }
+  catch (e) {
+    if (e && (e.code === 'auth/popup-blocked' || e.code === 'auth/operation-not-supported-in-this-environment')) { try { await L.U.signInWithRedirect(L.auth, prov); } catch (e2) { authErr(e2); } return; }
+    authErr(e);
+  }
+}
+async function cloudSignOut() {
+  try { const L = await cloudLib(); clearTimeout(CLOUD.timer); setCloudId(null); await L.U.signOut(L.auth); toast('Sei uscito dall’account. Gli schemi restano salvati online.'); }
+  catch (e) { toast('Uscita non riuscita.', 'err'); }
+}
+function userCol(L, name) { return L.F.collection(L.db, 'users', CLOUD.user.uid, name); }
+function cloudPayload() {
+  const data = snapshot();
+  return { name: (doc.meta.title || 'Schema').trim() || 'Schema', data, at: Date.now(), n: allComps().length, pages: doc.pages.length };
+}
+function setSaveStatus(t) { const el = $('#stSave'); if (el) el.textContent = t; }
+async function cloudWrite(P) {
+  if (P.data.length > 900000) { setSaveStatus('Schema troppo grande per il salvataggio online'); toast('Lo schema è troppo grande per il salvataggio online (massimo circa 900 kB): riduci o elimina le immagini.', 'err'); return false; }
+  if (CLOUD.saving) { CLOUD.again = true; return true; }
+  CLOUD.saving = true; setSaveStatus('Salvataggio nel tuo account…');
+  try {
+    const L = await cloudLib();
+    if (CLOUD.id) await L.F.setDoc(L.F.doc(userCol(L, 'schemes'), CLOUD.id), P);
+    else { const r = await L.F.addDoc(userCol(L, 'schemes'), P); setCloudId(r.id); }
+    setSaveStatus('Salvato nel tuo account');
+    return true;
+  } catch (e) {
+    setSaveStatus('Salvataggio online non riuscito: le modifiche restano nel browser');
+    return false;
+  } finally {
+    CLOUD.saving = false;
+    if (CLOUD.again) { CLOUD.again = false; cloudSchedule(); }
+  }
+}
+async function saveToCloud() {
+  if (SIM.on) { toast('Ferma la simulazione per salvare.'); return; }
+  if (!CLOUD.user) { await cloudSignIn(); if (!CLOUD.user) return; }
+  const P = cloudPayload(), isNew = !CLOUD.id;
+  if (await cloudWrite(P)) toast(isNew ? `Salvato nel tuo account come “${P.name}”. Da ora le modifiche si salvano da sole.` : `Salvato nel tuo account.`);
+  else if (P.data.length <= 900000) toast('Salvataggio online non riuscito. Controlla la connessione e riprova.', 'err');
+}
+function cloudSchedule() {
+  if (!CLOUD.user || !CLOUD.id || SIM.on) return;
+  clearTimeout(CLOUD.timer);
+  CLOUD.timer = setTimeout(() => cloudWrite(cloudPayload()), 2500);
+}
+async function cloudList() {
+  const L = await cloudLib();
+  const q = await L.F.getDocs(L.F.query(userCol(L, 'schemes'), L.F.orderBy('at', 'desc')));
+  return q.docs.map(d => Object.assign({ id: d.id }, d.data())).filter(x => typeof x.data === 'string');
+}
+async function cloudDelete(id) { const L = await cloudLib(); await L.F.deleteDoc(L.F.doc(userCol(L, 'schemes'), id)); }
+function cloudSaveBlocks(b) {
+  if (!CLOUD.user) return;
+  clearTimeout(CLOUD.blkTimer);
+  CLOUD.blkTimer = setTimeout(async () => {
+    try { const L = await cloudLib(); await L.F.setDoc(L.F.doc(L.db, 'users', CLOUD.user.uid), { blocks: JSON.stringify(b) }, { merge: true }); }
+    catch (e) { toast('I blocchi non sono stati salvati nel tuo account.', 'err'); }
+  }, 800);
+}
+async function cloudLoadBlocks() {
+  const L = await cloudLib(), uid = CLOUD.user.uid;
+  const snap = await L.F.getDoc(L.F.doc(L.db, 'users', uid));
+  let cb = null;
+  try { const v = snap.exists() ? JSON.parse(snap.data().blocks || 'null') : null; cb = Array.isArray(v) ? v : null; } catch (e) { cb = null; }
+  const local = loadBlocks();
+  let B = cb || [];
+  // al primo accesso da questo browser i blocchi locali si aggiungono a quelli dell’account
+  if (LS.get('elettrosim.blocksSync') !== uid) { const ids = new Set(B.map(x => x.id)); B = B.concat(local.filter(x => !ids.has(x.id))); LS.set('elettrosim.blocksSync', uid); }
+  LS.set('elettrosim.blocks', JSON.stringify(B));
+  if (!cb || B.length !== cb.length) cloudSaveBlocks(B);
+  buildLibrary();
+}
+function updateAccBtn() {
+  const b = $('#bAcc'); if (!b) return;
+  const u = CLOUD.user;
+  b.title = u ? `Account: ${u.email || u.displayName || ''}` : 'Accedi con Google per salvare online';
+  const pic = u && u.photoURL ? `<img src="${esc(u.photoURL)}" alt="" referrerpolicy="no-referrer">` : '<svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0116 0"/></svg>';
+  b.innerHTML = `${pic}<span class="hide-sm">${esc(u ? (u.displayName || u.email || 'Account').split(' ')[0] : 'Accedi')}</span>`;
+}
+function accMenu(anchor) {
+  const u = CLOUD.user;
+  if (!u) { menu(anchor, [{ h: 'Salva i tuoi schemi online' }, { t: 'Accedi con Google', f: cloudSignIn }]); return; }
+  menu(anchor, [
+    { h: u.email || u.displayName || 'Account' },
+    { t: CLOUD.id ? 'Salva ora nel mio account' : 'Salva nel mio account', k: 'Ctrl+S', dis: SIM.on, f: saveToCloud },
+    { t: 'I miei schemi…', f: openDialog },
+    '-',
+    { t: 'Esci', f: cloudSignOut },
+  ]);
+}
+async function initCloud() {
+  if (!FIREBASE_CONFIG) return;
+  const b = $('#bAcc'); b.hidden = false; b.onclick = e => accMenu(e.currentTarget);
+  updateAccBtn();
+  let L;
+  try { L = await cloudLib(); } catch (e) { return; }
+  L.U.getRedirectResult(L.auth).catch(authErr);
+  L.U.onAuthStateChanged(L.auth, async u => {
+    const was = CLOUD.user;
+    CLOUD.user = u || null;
+    updateAccBtn();
+    if (!u) { CLOUD.id = null; return; }
+    try { const s = JSON.parse(LS.get('elettrosim.cloudId') || 'null'); CLOUD.id = s && s.uid === u.uid ? s.id : null; } catch (e) { CLOUD.id = null; }
+    if (!was) toast(`Accesso eseguito come ${u.displayName || u.email}.${CLOUD.id ? '' : ' Usa File › Salva nel mio account per salvare questo schema online.'}`);
+    try { await cloudLoadBlocks(); } catch (e) { /* blocchi offline: restano quelli locali */ }
+  });
+}
 function replaceGuard(fn) {
   if (!allComps().length) { fn(); return; }
-  const m = modal('Sostituire lo schema aperto?', `<p class="note" style="font-size:13px">Lo schema “${esc(doc.meta.title || 'senza titolo')}” verrà chiuso. Puoi salvarlo nel browser prima di continuare.</p>`,
+  const m = modal('Sostituire lo schema aperto?', `<p class="note" style="font-size:13px">Lo schema “${esc(doc.meta.title || 'senza titolo')}” verrà chiuso. Puoi salvarlo${CLOUD.user ? ' nel tuo account' : ' nel browser'} prima di continuare.</p>`,
     '<button class="pbtn" data-c>Annulla</button><button class="pbtn" data-n>Continua senza salvare</button><button class="pbtn primary" data-s>Salva e continua</button>');
   m.querySelector('[data-c]').onclick = closeModal;
   m.querySelector('[data-n]').onclick = () => { closeModal(); fn(); };
-  m.querySelector('[data-s]').onclick = () => { saveToBrowser(); closeModal(); fn(); };
+  m.querySelector('[data-s]').onclick = () => { if (CLOUD.user) saveToCloud(); else saveToBrowser(); closeModal(); fn(); };
 }
 function docCount(d) { if (!d) return 0; if (Array.isArray(d.pages)) return d.pages.reduce((n, p) => n + (p && Array.isArray(p.comps) ? p.comps.length : 0), 0); return Array.isArray(d.comps) ? d.comps.length : 0; }
 function openDialog() {
   const P = projects(), names = Object.keys(P).sort((a, b) => (P[b].at || 0) - (P[a].at || 0));
   const fmt = t => { try { return new Date(t).toLocaleString('it-IT', { dateStyle: 'short', timeStyle: 'short' }); } catch (e) { return ''; } };
-  let body = '<h3 class="mh3">Salvati in questo browser</h3>';
+  let body = '';
+  if (FIREBASE_CONFIG) body += `<h3 class="mh3">Nel tuo account</h3><div id="cloudList">${CLOUD.user ? '<p class="empty">Caricamento…</p>' : '<div class="cloudbox"><p class="note">Accedi con Google per salvare gli schemi online e ritrovarli su qualsiasi computer, tablet o telefono.</p><div class="acts"><button class="pbtn primary" data-login>Accedi con Google</button></div></div>'}</div>`;
+  body += '<h3 class="mh3">Salvati in questo browser</h3>';
   body += names.length ? `<ul class="plist">${names.map((n, i) => `<li><div class="t"><b>${esc(n)}</b><small>${esc(fmt(P[n].at))} · ${docCount(P[n].doc)} elementi${P[n].doc && Array.isArray(P[n].doc.pages) && P[n].doc.pages.length > 1 ? ` · ${P[n].doc.pages.length} fogli` : ''}</small></div><button class="pbtn" data-open="${i}">Apri</button><button class="pbtn danger" data-del="${i}" title="Elimina dal browser" aria-label="Elimina ${esc(n)}">${ICON.del}</button></li>`).join('')}</ul>` : '<p class="empty">Nessuno schema salvato. Usa File › Salva nel browser.</p>';
   body += '<h3 class="mh3">Da file</h3><div class="acts"><button class="pbtn" data-imp>Importa file .json</button></div>';
   const m = modal('Apri schema', body);
@@ -4160,6 +4307,27 @@ function openDialog() {
     confirmBox('Eliminare dal browser?', `Lo schema “${n}” verrà rimosso da questo browser.`, 'Elimina', () => { const Q = projects(); delete Q[n]; LS.set('elettrosim.projects', JSON.stringify(Q)); toast('Eliminato.'); openDialog(); });
   });
   $('[data-imp]', m).onclick = () => { closeModal(); $('#fileIn').click(); };
+  const lg = $('[data-login]', m); if (lg) lg.onclick = () => { closeModal(); cloudSignIn(); };
+  if (CLOUD.user) fillCloudList(m);
+}
+async function fillCloudList(m) {
+  const box = $('#cloudList', m); if (!box) return;
+  let L;
+  try { L = await cloudList(); } catch (e) { box.innerHTML = '<p class="note bad">Impossibile leggere gli schemi online. Controlla la connessione e riprova.</p>'; return; }
+  if (!box.isConnected) return;
+  const fmt = t => { try { return new Date(t).toLocaleString('it-IT', { dateStyle: 'short', timeStyle: 'short' }); } catch (e) { return ''; } };
+  box.innerHTML = L.length ? `<ul class="plist">${L.map((x, i) => `<li><div class="t"><b>${esc(x.name)}${x.id === CLOUD.id ? ' <small>(aperto)</small>' : ''}</b><small>${esc(fmt(x.at))} · ${x.n || 0} elementi${x.pages > 1 ? ` · ${x.pages} fogli` : ''}</small></div><button class="pbtn" data-copen="${i}">Apri</button><button class="pbtn danger" data-cdel="${i}" title="Elimina dall’account" aria-label="Elimina ${esc(x.name)}">${ICON.del}</button></li>`).join('')}</ul>` : '<p class="empty">Nessuno schema nel tuo account. Usa File › Salva nel mio account.</p>';
+  $$('[data-copen]', box).forEach(b => b.onclick = () => {
+    const x = L[+b.dataset.copen]; closeModal();
+    replaceGuard(() => { try { loadDoc(JSON.parse(x.data), `Aperto “${x.name}” dal tuo account.`); setCloudId(x.id); } catch (e) { toast('Lo schema online è danneggiato.', 'err'); } });
+  });
+  $$('[data-cdel]', box).forEach(b => b.onclick = () => {
+    const x = L[+b.dataset.cdel];
+    confirmBox('Eliminare dall’account?', `Lo schema “${x.name}” verrà eliminato dal tuo account su tutti i dispositivi.`, 'Elimina', async () => {
+      try { await cloudDelete(x.id); if (x.id === CLOUD.id) setCloudId(null); toast('Eliminato.'); } catch (e) { toast('Eliminazione non riuscita.', 'err'); }
+      openDialog();
+    });
+  });
 }
 function importFile(file) {
   if (!file) return;
@@ -4388,7 +4556,8 @@ function init() {
   $('#bFile').onclick = e => menu(e.currentTarget, [
     { t: 'Nuovo schema', f: () => replaceGuard(() => loadDoc(newDoc(), 'Nuovo schema vuoto.')) },
     { t: 'Apri…', f: openDialog },
-    { t: 'Salva nel browser', k: 'Ctrl+S', f: saveToBrowser },
+    ...(FIREBASE_CONFIG ? [{ t: CLOUD.user ? 'Salva nel mio account' : 'Salva nel mio account (accedi con Google)…', k: CLOUD.user ? 'Ctrl+S' : '', f: saveToCloud }] : []),
+    { t: 'Salva nel browser', k: CLOUD.user ? '' : 'Ctrl+S', f: saveToBrowser },
     '-',
     { t: 'Scarica file .json', f: downloadJSON },
     { t: 'Importa file .json', f: () => $('#fileIn').click() },
@@ -4452,6 +4621,7 @@ function init() {
   if (!loaded) toast('Esempio caricato: premi Simula per provarlo.');
   if (!LS.get('elettrosim.seenHelp')) setTimeout(openHelp, 400);
   initCaps();
+  initCloud();
   window.__es = { get doc() { return doc; }, DEF, SIM, ui, POTS, buildExample, loadExample, loadDoc, startSim, stopSim, step, doAct, actFor, verify, termsW, wireRoute, cmap, allComps, exportSVGString, commit, undo, redo, switchPage, addPage, mkComp, grParse, buildTopo, previewSVG, LIB: () => LIB };
 }
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
