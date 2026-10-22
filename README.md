@@ -63,14 +63,15 @@ Il sito è pubblicato con GitHub Pages dal branch `main`: ogni push lo aggiorna 
 | `js/examples.js`, `js/main.js` | Esempi e avvio |
 | `sw.js` | Service worker per l'uso offline (se aggiungi un file, aggiungilo anche qui) |
 | `fonts/`, `vendor/` | Caratteri e librerie inclusi (jsPDF, Firebase) |
-| `desktop/` | Versione desktop (Electron) |
+| `desktop/` | Programma desktop (Tauri): `src-tauri/src/lib.rs` è il codice Rust, `copy-web.js` prepara la copia inclusa |
+| `tools/check-version.js` | Controlla che tutte le versioni coincidano |
 | `.github/workflows/desktop.yml` | Costruisce e pubblica la versione desktop |
 
 Gli script in `js/` sono normali script del browser caricati in ordine da `index.html` e condividono le stesse variabili globali.
 
 ### Pubblicare una nuova versione desktop
 
-Aumenta `version` in `desktop/package.json`, poi su GitHub vai in *Actions › Versione desktop › Run workflow*, oppure crea un tag `v1.0.1` (*Releases › Draft a new release*). In circa 10 minuti la pagina Releases avrà i file per Windows, macOS e Linux. Per provarla in locale: `cd desktop && npm install && npm start`.
+Aggiorna il numero di versione in tutti i file indicati in `js/version.js` (controllo: `node tools/check-version.js`), poi su GitHub vai in *Actions › Versione desktop › Run workflow*, oppure crea un tag `v2.0.1` (*Releases › Draft a new release*). In circa 10 minuti la pagina Releases avrà i file per Windows, macOS e Linux. Per provarla in locale servono Node.js e Rust: `cd desktop && npm install && npm run dev`.
 
 ## Configurare gli account Google (Firebase)
 

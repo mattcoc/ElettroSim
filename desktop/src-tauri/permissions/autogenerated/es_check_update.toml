@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-es-check-update"
+description = "Enables the es_check_update command without any pre-configured scope."
+commands.allow = ["es_check_update"]
+
+[[permission]]
+identifier = "deny-es-check-update"
+description = "Denies the es_check_update command without any pre-configured scope."
+commands.deny = ["es_check_update"]

@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-es-login"
+description = "Enables the es_login command without any pre-configured scope."
+commands.allow = ["es_login"]
+
+[[permission]]
+identifier = "deny-es-login"
+description = "Denies the es_login command without any pre-configured scope."
+commands.deny = ["es_login"]

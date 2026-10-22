@@ -3,14 +3,14 @@
 /* ---------- offline e installazione ---------- */
 let installEvt = null;
 const RELEASES_URL = 'https://github.com/mattcoc/ElettroSim/releases/latest';
-function isStandalone() { try { return window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true || /Electron|ElettroSimDesktop/.test(navigator.userAgent); } catch (e) { return false; } }
+function isStandalone() { try { return window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true || !!window.elettroDesktop; } catch (e) { return false; } }
 function installApp() {
   if (installEvt) { installEvt.prompt(); installEvt.userChoice.finally(() => { installEvt = null; }); return; }
   const ios = /iPhone|iPad|iPod/.test(navigator.userAgent);
   modal('Installa ElettroSim', `<p class="note" style="font-size:13px">${ios
     ? 'Su iPhone e iPad: apri il sito con Safari, tocca il pulsante <b>Condividi</b> e scegli <b>Aggiungi alla schermata Home</b>.'
     : 'Apri il menu del browser (⋮ in Chrome, ⋯ in Edge) e scegli <b>Installa app</b> oppure <b>Aggiungi a schermata Home</b>.'} L’app si apre come un programma, con la sua icona, e funziona anche senza connessione.</p>
-    <p class="note">Per il computer puoi anche scaricare la versione desktop (Windows, macOS, Linux): <a href="${RELEASES_URL}" target="_blank" rel="noopener">pagina dei download</a>.</p>`);
+    <p class="note">Per il computer puoi anche scaricare il programma desktop (Windows, macOS, Linux): <a href="${RELEASES_URL}" target="_blank" rel="noopener">pagina dei download</a>.</p>`);
 }
 function initOffline() {
   if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) navigator.serviceWorker.register('sw.js').catch(() => {});

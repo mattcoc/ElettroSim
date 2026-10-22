@@ -1,83 +1,18 @@
 {
-  "name": "elettrosim",
+  "name": "elettrosim-desktop",
   "productName": "ElettroSim",
-  "version": "1.1.0",
+  "version": "2.0.0",
   "description": "Disegna e simula schemi elettrici, PLC, GRAFCET e pneumatica, online e offline.",
   "author": "mattcoc",
   "private": true,
-  "main": "main.js",
+  "repository": { "type": "git", "url": "https://github.com/mattcoc/ElettroSim.git" },
   "scripts": {
     "web": "node copy-web.js",
-    "start": "npm run web && electron .",
-    "dist": "npm run web && electron-builder --publish never"
+    "dev": "tauri dev",
+    "build": "tauri build",
+    "icons": "tauri icon app-icon.png"
   },
   "devDependencies": {
-    "electron": "33.2.0",
-    "electron-builder": "25.1.8"
-  },
-  "build": {
-    "appId": "io.github.mattcoc.elettrosim",
-    "productName": "ElettroSim",
-    "directories": {
-      "output": "dist"
-    },
-    "files": [
-      "main.js",
-      "preload.js",
-      "icon.png",
-      "web/**/*"
-    ],
-    "win": {
-      "icon": "icon.png",
-      "target": [
-        {
-          "target": "nsis",
-          "arch": [
-            "x64"
-          ]
-        },
-        {
-          "target": "portable",
-          "arch": [
-            "x64"
-          ]
-        }
-      ]
-    },
-    "nsis": {
-      "oneClick": false,
-      "allowToChangeInstallationDirectory": true,
-      "artifactName": "ElettroSim-Setup-${version}.${ext}"
-    },
-    "portable": {
-      "artifactName": "ElettroSim-${version}-portatile.${ext}"
-    },
-    "mac": {
-      "icon": "icon.png",
-      "identity": null,
-      "category": "public.app-category.education",
-      "target": [
-        {
-          "target": "dmg",
-          "arch": [
-            "universal"
-          ]
-        }
-      ],
-      "artifactName": "ElettroSim-${version}-mac.${ext}"
-    },
-    "linux": {
-      "icon": "icon.png",
-      "category": "Education",
-      "target": [
-        "AppImage"
-      ],
-      "artifactName": "ElettroSim-${version}-linux.${ext}"
-    },
-    "publish": null
-  },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/mattcoc/ElettroSim.git"
+    "@tauri-apps/cli": "2.12.4"
   }
 }

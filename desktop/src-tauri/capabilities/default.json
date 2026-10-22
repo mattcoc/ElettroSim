@@ -1,0 +1,17 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "main",
+  "description": "Permessi della finestra principale, sia per la copia inclusa nel programma sia per il sito caricato online.",
+  "windows": ["main"],
+  "local": true,
+  "remote": { "urls": ["https://mattcoc.github.io/ElettroSim/*"] },
+  "permissions": [
+    "core:default",
+    "allow-es-login",
+    "allow-es-login-cancel",
+    "allow-es-check-update",
+    "allow-es-open",
+    "allow-es-fullscreen",
+    "allow-es-ready"
+  ]
+}

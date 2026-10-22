@@ -1,6 +1,6 @@
-# Costruisce la versione desktop di ElettroSim (Windows, macOS, Linux) e la pubblica nella pagina Releases.
+# Costruisce la versione desktop di ElettroSim con Tauri (Windows, macOS, Linux) e la pubblica nella pagina Releases.
 # Si avvia da solo quando si crea un tag "v…", oppure a mano da Actions › Versione desktop › Run workflow.
-# Prima di pubblicare aumenta "version" in desktop/package.json: diventa il nome della release (v1.2.0)
+# Prima di pubblicare aggiorna il numero di versione (vedi js/version.js): diventa il nome della release (v2.0.0)
 # e i programmi già installati avvisano che c'è un aggiornamento.
 name: Versione desktop
 
@@ -17,29 +17,60 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [windows-latest, macos-latest, ubuntu-latest]
+        include:
+          - os: windows-latest
+            args: --bundles nsis
+          - os: macos-latest
+            args: --target universal-apple-darwin --bundles dmg
+          - os: ubuntu-22.04
+            args: --bundles appimage
     runs-on: ${{ matrix.os }}
     defaults:
       run:
-        working-directory: desktop
+        shell: bash
     steps:
       - uses: actions/checkout@v4
+      - run: node tools/check-version.js
       - uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: npm
           cache-dependency-path: desktop/package-lock.json
-      - run: npm ci
-      - run: npm run dist
-        env:
-          CSC_IDENTITY_AUTO_DISCOVERY: false
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.os == 'macos-latest' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: desktop/src-tauri
+      - if: startsWith(matrix.os, 'ubuntu')
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libgtk-3-dev librsvg2-dev libayatana-appindicator3-dev patchelf
+      - working-directory: desktop
+        run: npm ci
+      - working-directory: desktop/src-tauri
+        run: cargo test --locked
+      - working-directory: desktop
+        run: npx tauri build ${{ matrix.args }}
+      - name: Raccogli i file
+        run: |
+          V=$(node -p "require('./desktop/package.json').version")
+          T=desktop/src-tauri/target
+          mkdir -p out
+          case "${{ matrix.os }}" in
+            windows-latest)
+              cp $T/release/bundle/nsis/*-setup.exe "out/ElettroSim-Setup-$V.exe"
+              cp $T/release/elettrosim.exe "out/ElettroSim-$V-portatile.exe" ;;
+            macos-latest)
+              cp $T/universal-apple-darwin/release/bundle/dmg/*.dmg "out/ElettroSim-$V-mac.dmg" ;;
+            *)
+              cp $T/release/bundle/appimage/*.AppImage "out/ElettroSim-$V-linux.AppImage" ;;
+          esac
+          ls -la out
       - uses: actions/upload-artifact@v4
         with:
           name: elettrosim-${{ matrix.os }}
-          path: |
-            desktop/dist/*.exe
-            desktop/dist/*.dmg
-            desktop/dist/*.AppImage
+          path: out/*
           if-no-files-found: error
 
   release:
@@ -56,15 +87,15 @@ jobs:
       - uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.ref_type == 'tag' && github.ref_name || format('v{0}', steps.ver.outputs.v) }}
-          name: ElettroSim desktop ${{ steps.ver.outputs.v }}
+          name: ElettroSim ${{ steps.ver.outputs.v }}
           make_latest: true
           files: out/*
           body: |
-            Versione desktop di ElettroSim. Funziona online e offline.
+            Programma desktop di ElettroSim (Tauri). Funziona online e offline.
 
-            - **Windows**: `ElettroSim-Setup-….exe` (installazione) oppure `ElettroSim-…-portatile.exe` (si avvia senza installare).
+            - **Windows**: `ElettroSim-Setup-….exe` (installazione) oppure `ElettroSim-…-portatile.exe` (si avvia senza installare; serve WebView2, già presente su Windows 10 e 11).
               Al primo avvio Windows può mostrare "PC protetto": clicca *Ulteriori informazioni* › *Esegui comunque*.
-            - **macOS**: `ElettroSim-…-mac.dmg`. Al primo avvio: clic destro sull'app › *Apri*.
+            - **macOS**: `ElettroSim-…-mac.dmg` (Intel e Apple Silicon). Al primo avvio: clic destro sull'app › *Apri*.
             - **Linux**: `ElettroSim-…-linux.AppImage`, rendilo eseguibile (`chmod +x`) e avvialo.
 
-            Con la connessione l'app usa la versione più aggiornata del sito, con account Google e Lavora insieme; senza connessione usa la copia salvata.
+            Con la connessione il programma usa la versione più aggiornata del sito, con account Google e Lavora insieme; senza connessione usa la copia salvata o quella inclusa.

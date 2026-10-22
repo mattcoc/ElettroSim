@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-es-fullscreen"
+description = "Enables the es_fullscreen command without any pre-configured scope."
+commands.allow = ["es_fullscreen"]
+
+[[permission]]
+identifier = "deny-es-fullscreen"
+description = "Denies the es_fullscreen command without any pre-configured scope."
+commands.deny = ["es_fullscreen"]

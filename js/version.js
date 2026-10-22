@@ -1,3 +1,4 @@
-/* ElettroSim · Versione dell'app. Quando pubblichi una novità aumentala qui e in version.json:
-   chi ha il sito aperto riceve l'avviso "nuova versione disponibile". */
-const APP_VERSION = '1.2.1';
+/* ElettroSim · Versione dell'app: sito e programma desktop hanno lo stesso numero.
+   Per una nuova versione aggiornala qui, in version.json, desktop/package.json e desktop/src-tauri/Cargo.toml
+   (controllo: node tools/check-version.js). Il programma desktop avvisa quando ne esce una nuova. */
+const APP_VERSION = '2.0.0';

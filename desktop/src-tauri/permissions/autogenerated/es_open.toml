@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-es-open"
+description = "Enables the es_open command without any pre-configured scope."
+commands.allow = ["es_open"]
+
+[[permission]]
+identifier = "deny-es-open"
+description = "Denies the es_open command without any pre-configured scope."
+commands.deny = ["es_open"]

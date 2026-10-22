@@ -1,0 +1,30 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "ElettroSim",
+  "version": "../package.json",
+  "identifier": "io.github.mattcoc.elettrosim",
+  "build": {
+    "frontendDist": "../web",
+    "beforeBuildCommand": "npm run web",
+    "beforeDevCommand": "npm run web"
+  },
+  "app": {
+    "windows": [],
+    "security": { "csp": null },
+    "withGlobalTauri": false
+  },
+  "bundle": {
+    "active": true,
+    "targets": ["nsis", "dmg", "appimage"],
+    "category": "Education",
+    "shortDescription": "Editor e simulatore di schemi elettrici",
+    "longDescription": "Disegna e simula schemi elettrici, PLC in ladder, GRAFCET, logica digitale e pneumatica. Funziona online e offline.",
+    "copyright": "mattcoc",
+    "icon": ["icons/32x32.png", "icons/128x128.png", "icons/128x128@2x.png", "icons/icon.icns", "icons/icon.ico"],
+    "windows": {
+      "webviewInstallMode": { "type": "downloadBootstrapper", "silent": true },
+      "nsis": { "installMode": "currentUser", "displayLanguageSelector": false, "languages": ["Italian"] }
+    },
+    "macOS": { "minimumSystemVersion": "10.15" }
+  }
+}

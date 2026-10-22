@@ -1,3 +1,4 @@
 desktop/node_modules/
 desktop/web/
-desktop/dist/
+desktop/src-tauri/target/
+desktop/src-tauri/gen/

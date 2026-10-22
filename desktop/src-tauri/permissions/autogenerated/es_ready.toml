@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-es-ready"
+description = "Enables the es_ready command without any pre-configured scope."
+commands.allow = ["es_ready"]
+
+[[permission]]
+identifier = "deny-es-ready"
+description = "Denies the es_ready command without any pre-configured scope."
+commands.deny = ["es_ready"]
