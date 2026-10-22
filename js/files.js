@@ -114,6 +114,20 @@ async function cloudSignIn() {
   if (!navigator.onLine) { toast('Sei offline: per accedere all’account serve la connessione. Puoi continuare a lavorare, lo schema resta salvato su questo dispositivo.'); return; }
   let L;
   try { L = await cloudLib(); } catch (e) { toast('Impossibile caricare il servizio di accesso. Controlla la connessione.', 'err'); return; }
+  // nel programma desktop l'accesso si fa nel browser predefinito, dove l'account Google è già collegato
+  if (window.elettroDesktop && window.elettroDesktop.login && /^https:/.test(location.protocol)) {
+    const m = modal('Accesso con Google', '<p class="note" style="font-size:13px">Si è aperta una pagina nel tuo browser: scegli lì il tuo account Google. Al termine l’accesso passa da solo a ElettroSim.</p>', '<button class="pbtn" data-c>Annulla</button>');
+    let cancelled = false;
+    m.querySelector('[data-c]').onclick = () => { cancelled = true; closeModal(); window.elettroDesktop.cancelLogin && window.elettroDesktop.cancelLogin(); };
+    try {
+      const r = await window.elettroDesktop.login();
+      if (cancelled) return;
+      closeModal();
+      if (!r || !r.idToken) { if (r && r.error !== 'cancelled') toast(r.error === 'timeout' ? 'Tempo scaduto: riprova ad accedere.' : 'Accesso non riuscito. Riprova.', 'err'); return; }
+      await L.U.signInWithCredential(L.auth, L.U.GoogleAuthProvider.credential(r.idToken, r.accessToken || null));
+    } catch (e) { closeModal(); authErr(e); }
+    return;
+  }
   const prov = new L.U.GoogleAuthProvider();
   prov.setCustomParameters({ prompt: 'select_account' });
   try { await L.U.signInWithPopup(L.auth, prov); }

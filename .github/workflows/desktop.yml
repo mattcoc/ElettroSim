@@ -1,5 +1,7 @@
 # Costruisce la versione desktop di ElettroSim (Windows, macOS, Linux) e la pubblica nella pagina Releases.
-# Si avvia da solo quando si crea un tag "v…" (es. v1.0.1), oppure a mano da Actions › Versione desktop › Run workflow.
+# Si avvia da solo quando si crea un tag "v…", oppure a mano da Actions › Versione desktop › Run workflow.
+# Prima di pubblicare aumenta "version" in desktop/package.json: diventa il nome della release (v1.2.0)
+# e i programmi già installati avvisano che c'è un aggiornamento.
 name: Versione desktop
 
 on:
@@ -44,14 +46,17 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
+      - id: ver
+        run: echo "v=$(node -p "require('./desktop/package.json').version")" >> "$GITHUB_OUTPUT"
       - uses: actions/download-artifact@v4
         with:
           path: out
           merge-multiple: true
       - uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ github.ref_type == 'tag' && github.ref_name || format('desktop-{0}', github.run_number) }}
-          name: ElettroSim desktop ${{ github.ref_type == 'tag' && github.ref_name || format('(build {0})', github.run_number) }}
+          tag_name: ${{ github.ref_type == 'tag' && github.ref_name || format('v{0}', steps.ver.outputs.v) }}
+          name: ElettroSim desktop ${{ steps.ver.outputs.v }}
           make_latest: true
           files: out/*
           body: |

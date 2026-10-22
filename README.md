@@ -18,6 +18,8 @@ Impianti civili e industriali, PLC in ladder, GRAFCET, logica digitale e pneumat
 - **Esportare** in PDF, PNG o SVG, con cartiglio compilabile.
 - **Salvare** nel browser, su file `.json` oppure **nel tuo account Google**, per ritrovare gli schemi su ogni dispositivo.
 - **Lavorare in due (o più) sullo stesso schema** in tempo reale: *Lavora insieme* crea un link da mandare ai compagni.
+- **Tensioni come in CADe SIMU**: tensione di rete e continua modificabili, tensione nominale dei carichi; con la tensione sbagliata un componente si brucia o non funziona.
+- **Impostazioni**: tema chiaro/scuro, colore principale, pannelli richiudibili e ridimensionabili, preferenze dell'editor e della simulazione.
 - **Esempi pronti**: avviamento diretto, inversione di marcia, stella-triangolo, PLC, GRAFCET, porte logiche, variatore di frequenza.
 
 ## Come si usa
@@ -32,7 +34,7 @@ Il pulsante **?** (o il tasto F1) apre la guida con tutte le scorciatoie da tast
 ## Usarla offline e sul computer
 
 - **Dal browser**: dopo la prima apertura il sito funziona anche senza connessione. Da *File › Installa l'app* (o dal menu del browser) diventa un'app con la sua icona, su computer e telefono.
-- **Versione desktop** per Windows, macOS e Linux: scaricala dalla pagina [Releases](https://github.com/mattcoc/ElettroSim/releases/latest). Con la connessione usa la versione più aggiornata del sito (con account e *Lavora insieme*), senza connessione la copia salvata.
+- **Versione desktop** per Windows, macOS e Linux (l'accesso a Google si fa nel browser predefinito, dove sei già collegato; avvisa quando esce una nuova versione): scaricala dalla pagina [Releases](https://github.com/mattcoc/ElettroSim/releases/latest). Con la connessione usa la versione più aggiornata del sito (con account e *Lavora insieme*), senza connessione la copia salvata.
 
 Offline si può disegnare, simulare, salvare nel browser ed esportare. Gli schemi salvati nell'account restano leggibili e i salvataggi partono da soli quando torna la rete; accesso e *Lavora insieme* richiedono la connessione.
 
@@ -55,6 +57,9 @@ Il sito è pubblicato con GitHub Pages dal branch `main`: ogni push lo aggiorna 
 | `js/ui.js`, `js/panels.js` | Messaggi, finestre, menu, libreria, pannelli, verifica |
 | `js/files.js` | File, esportazioni, account Google |
 | `js/coop.js` | Lavora insieme (tempo reale) |
+| `js/settings.js` | Impostazioni, pannelli, avviso aggiornamenti |
+| `js/version.js`, `version.json` | Versione dell'app (aumentale insieme per avvisare gli utenti) |
+| `login.html` | Pagina di accesso usata dalla versione desktop |
 | `js/examples.js`, `js/main.js` | Esempi e avvio |
 | `sw.js` | Service worker per l'uso offline (se aggiungi un file, aggiungilo anche qui) |
 | `fonts/`, `vendor/` | Caratteri e librerie inclusi (jsPDF, Firebase) |
@@ -65,7 +70,7 @@ Gli script in `js/` sono normali script del browser caricati in ordine da `index
 
 ### Pubblicare una nuova versione desktop
 
-Su GitHub vai in *Actions › Versione desktop › Run workflow*, oppure crea un tag `v1.0.1` (*Releases › Draft a new release*). In circa 10 minuti la pagina Releases avrà i file per Windows, macOS e Linux. Per provarla in locale: `cd desktop && npm install && npm start`.
+Aumenta `version` in `desktop/package.json`, poi su GitHub vai in *Actions › Versione desktop › Run workflow*, oppure crea un tag `v1.0.1` (*Releases › Draft a new release*). In circa 10 minuti la pagina Releases avrà i file per Windows, macOS e Linux. Per provarla in locale: `cd desktop && npm install && npm start`.
 
 ## Configurare gli account Google (Firebase)
 

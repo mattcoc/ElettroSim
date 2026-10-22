@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Accesso a ElettroSim</title>
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="css/fonts.css">
+<style>
+:root{--bg:#e9edf0;--card:#fff;--fg:#1c2329;--muted:#5d6a75;--line:#d3dade;--accent:#b4581c;--danger:#c0262d;--ok:#157a3c;color-scheme:light dark}
+@media (prefers-color-scheme: dark){:root{--bg:#12171b;--card:#1a2026;--fg:#e4e9ed;--muted:#9aa7b2;--line:#2c353d;--accent:#e0864a;--danger:#f2777b;--ok:#4cc47a}}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{margin:0;min-height:100vh;display:grid;place-items:center;padding:16px;background:var(--bg);color:var(--fg);font:14px "IBM Plex Sans",system-ui,sans-serif}
+.card{width:min(420px,100%);background:var(--card);border:1px solid var(--line);border-radius:14px;padding:28px 26px;display:grid;gap:14px;text-align:center;box-shadow:0 6px 24px rgba(0,0,0,.08)}
+.logo{width:56px;height:56px;margin:0 auto}
+h1{margin:0;font:600 21px "IBM Plex Sans Condensed","IBM Plex Sans",sans-serif}
+p{margin:0;color:var(--muted);line-height:1.5}
+button{height:44px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--fg);font:500 14px "IBM Plex Sans",system-ui,sans-serif;display:inline-flex;align-items:center;justify-content:center;gap:10px;cursor:pointer}
+button:hover{border-color:var(--accent)}
+button[disabled]{opacity:.6;cursor:default}
+.g{width:18px;height:18px}
+.msg.err{color:var(--danger)}.msg.ok{color:var(--ok);font-weight:500}
+</style>
+</head>
+<body>
+<main class="card">
+  <svg class="logo" viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="14" fill="#1c2329"/><path d="M10 32h13l6-16 9 32 6-16h10" fill="none" stroke="#f0a36c" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  <h1>Accedi a ElettroSim desktop</h1>
+  <p id="intro">Scegli il tuo account Google: al termine l’accesso passerà da solo al programma ElettroSim.</p>
+  <button id="go"><svg class="g" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-7.9l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.4-.4-3.5z"/></svg>Continua con Google</button>
+  <p class="msg" id="msg" role="status"></p>
+</main>
+<script src="js/config.js"></script>
+<script type="module">
+const q = new URLSearchParams(location.search);
+const port = +q.get('port'), state = q.get('state') || '';
+const msg = document.getElementById('msg'), go = document.getElementById('go');
+const say = (t, cls) => { msg.textContent = t; msg.className = 'msg' + (cls ? ' ' + cls : ''); };
+const valid = Number.isInteger(port) && port > 1023 && port < 65536 && /^[a-z0-9]{16,64}$/.test(state);
+if (!valid) { go.hidden = true; document.getElementById('intro').textContent = 'Questa pagina si apre dal programma ElettroSim desktop, con il pulsante Accedi.'; }
+else if (!FIREBASE_CONFIG) { go.disabled = true; say('Gli account non sono configurati.', 'err'); }
+go.onclick = async () => {
+  go.disabled = true; say('Attendere…');
+  try {
+    const [A, U] = await Promise.all([import('./vendor/firebase/firebase-app.js'), import('./vendor/firebase/firebase-auth.js')]);
+    const auth = U.getAuth(A.initializeApp(FIREBASE_CONFIG));
+    const prov = new U.GoogleAuthProvider();
+    prov.setCustomParameters({ prompt: 'select_account' });
+    const res = await U.signInWithPopup(auth, prov);
+    const cred = U.GoogleAuthProvider.credentialFromResult(res);
+    if (!cred || !cred.idToken) throw new Error('nocred');
+    const u = new URL(`http://127.0.0.1:${port}/done`);
+    u.searchParams.set('state', state); u.searchParams.set('id', cred.idToken);
+    if (cred.accessToken) u.searchParams.set('at', cred.accessToken);
+    await U.signOut(auth).catch(() => {});
+    say('Accesso riuscito: torna a ElettroSim.', 'ok');
+    location.replace(u.toString());
+  } catch (e) {
+    go.disabled = false;
+    const c = (e && e.code) || '';
+    say(c === 'auth/popup-blocked' ? 'Il browser ha bloccato la finestra di Google: consenti i popup e riprova.' : c === 'auth/popup-closed-by-user' ? 'Accesso annullato.' : 'Accesso non riuscito. Riprova.', 'err');
+  }
+};
+</script>
+</body>
+</html>
