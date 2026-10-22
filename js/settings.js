@@ -5,6 +5,8 @@ const PREFS = (() => { try { return Object.assign({}, PREF_DEF, JSON.parse(local
 function savePrefs() { LS.set('elettrosim.prefs', JSON.stringify(PREFS)); }
 const ACCENTS = [['rame', '#b4581c', 'Rame'], ['blu', '#2160e0', 'Blu'], ['viola', '#7c3aed', 'Viola'], ['verde', '#0f766e', 'Verde acqua'], ['rosa', '#c0266e', 'Lampone']];
 const isNarrow = () => window.innerWidth <= 860;
+// la versione web si aggiorna da sola a ogni apertura: gli avvisi di aggiornamento servono solo al programma desktop
+const IS_DESKTOP = !!window.elettroDesktop;
 
 function applyPrefs() {
   const r = document.documentElement;
@@ -58,16 +60,18 @@ function initSettings() {
   // la vista si adatta quando cambia lo spazio del foglio (pannelli aperti, chiusi o ridimensionati)
   if (window.ResizeObserver) { let t = null; new ResizeObserver(() => { clearTimeout(t); t = setTimeout(() => { if (!ui.userView) fitView(); else render(); }, 40); }).observe($('#stage')); }
   window.addEventListener('resize', () => applyPrefs());
-  setTimeout(() => checkUpdates(false), 6000);
-  setInterval(() => checkUpdates(false), 30 * 60 * 1000);
-  document.addEventListener('visibilitychange', () => { if (!document.hidden && Date.now() - UPD.at > 10 * 60 * 1000) checkUpdates(false); });
+  if (IS_DESKTOP) {
+    setTimeout(() => checkUpdates(false), 6000);
+    setInterval(() => checkUpdates(false), 30 * 60 * 1000);
+    document.addEventListener('visibilitychange', () => { if (!document.hidden && Date.now() - UPD.at > 10 * 60 * 1000) checkUpdates(false); });
+  }
 }
 
 /* ---------- finestra impostazioni ---------- */
 let setTab = 'look';
 function openSettings(tab) {
   if (tab) setTab = tab;
-  const tabs = [['look', 'Aspetto'], ['edit', 'Editor'], ['sim', 'Simulazione'], ...(FIREBASE_CONFIG ? [['acc', 'Account']] : []), ['upd', 'Aggiornamenti'], ['info', 'Informazioni']];
+  const tabs = [['look', 'Aspetto'], ['edit', 'Editor'], ['sim', 'Simulazione'], ...(FIREBASE_CONFIG ? [['acc', 'Account']] : []), ...(IS_DESKTOP ? [['upd', 'Aggiornamenti']] : []), ['info', 'Informazioni']];
   if (!tabs.some(t => t[0] === setTab)) setTab = 'look';
   const m = modal('Impostazioni', `<div class="settabs" role="tablist">${tabs.map(([k, t]) => `<button role="tab" data-tab="${k}" class="${k === setTab ? 'on' : ''}">${t}</button>`).join('')}</div><div class="setpane" id="setPane"></div>`, '<button class="pbtn primary" data-c>Fatto</button>', true);
   m.querySelector('[data-c]').onclick = closeModal;
@@ -111,7 +115,7 @@ function renderSetPane() {
       ${setChk('sUpd', PREFS.updates, 'Avvisami quando è disponibile una nuova versione')}
       ${L && L.notes && L.notes.length ? `<h3 class="mh3">Novità della versione ${esc(L.version)}</h3><ul class="note" style="margin:0;padding-left:18px">${L.notes.map(n => `<li>${esc(n)}</li>`).join('')}</ul>` : ''}`;
   } else {
-    h = `<p class="note" style="font-size:13px"><b>ElettroSim</b> ${esc(APP_VERSION)} · editor e simulatore di schemi elettrici, PLC, GRAFCET e pneumatica. Funziona nel browser, anche offline, e come programma per computer.</p>
+    h = `<p class="note" style="font-size:13px"><b>ElettroSim</b> ${esc(APP_VERSION)} · editor e simulatore di schemi elettrici, PLC, GRAFCET e pneumatica. Funziona nel browser, anche offline, e come programma per computer.${IS_DESKTOP ? '' : ' La versione web si aggiorna da sola ogni volta che la apri.'}</p>
       <div class="acts"><a class="pbtn" href="https://mattcoc.github.io/ElettroSim/" target="_blank" rel="noopener">Sito</a><a class="pbtn" href="https://github.com/mattcoc/ElettroSim" target="_blank" rel="noopener">Codice su GitHub</a><a class="pbtn" href="${RELEASES_URL}" target="_blank" rel="noopener">Versione desktop</a><a class="pbtn" href="https://github.com/mattcoc/ElettroSim/issues/new" target="_blank" rel="noopener">Segnala un problema</a></div>`;
   }
   P.innerHTML = h;
