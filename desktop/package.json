@@ -1,7 +1,7 @@
 {
   "name": "elettrosim-desktop",
   "productName": "ElettroSim",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "Disegna e simula schemi elettrici, PLC, GRAFCET e pneumatica, online e offline.",
   "author": "mattcoc",
   "private": true,

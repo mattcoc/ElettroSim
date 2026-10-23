@@ -1,8 +1,6 @@
 {
-  "version": "2.0.0",
+  "version": "2.0.1",
   "notes": [
-    "Programma desktop rifatto con Tauri: download fino a 10 volte più piccolo e meno memoria",
-    "Si apre con un foglio vuoto",
-    "Sito e programma desktop hanno ora lo stesso numero di versione"
+    "Nuovo esempio: PLC S7-1200, inversione di marcia in ladder con interblocco, termico e segnalazioni"
   ]
 }

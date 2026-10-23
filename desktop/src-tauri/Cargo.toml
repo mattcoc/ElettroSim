@@ -1,6 +1,6 @@
 [package]
 name = "elettrosim"
-version = "2.0.0"
+version = "2.0.1"
 description = "ElettroSim: editor e simulatore di schemi elettrici"
 authors = ["mattcoc"]
 edition = "2021"

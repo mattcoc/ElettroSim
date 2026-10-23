@@ -133,6 +133,92 @@ function buildExample(id) {
     W(Q0b, 'r', Q1c, 'l');
     Tx(100, 240, 'Segmento 1: marcia con autoritenuta. I0.0 avvia; I0.1 è un contatto NA perché il pulsante S0 è NC (a riposo l’ingresso vale 1).', 11);
     Tx(100, 258, 'Segmento 2: la lampada H1 (Q0.1) segnala il motore in marcia.', 11);
+  } else if (id === 'plcinv') {
+    d.meta.title = 'PLC S7-1200: inversione di marcia';
+    name('Cablaggio');
+    // circuito di potenza: KM1 avanti, KM2 indietro (L1 e L3 scambiate), relè termico F1
+    const X1 = A('src3pe', 80, 80), Q1 = A('mcb3', 80, 120, 'Q1', { props: { startOn: true } });
+    const KM1 = A('km3p', 80, 220, 'KM1'), KM2 = A('km3p', 180, 220, 'KM2'), F1 = A('ol3', 80, 300, 'F1'), M1 = A('m3', 100, 380, 'M1');
+    ['L1', 'L2', 'L3'].forEach((p, i) => W(X1, p, Q1, 'a' + (i + 1)));
+    const j1 = J(80, 160), j2 = J(100, 170), j3 = J(120, 180);
+    [j1, j2, j3].forEach((j, i) => { W(Q1, 'b' + (i + 1), j, 'j'); W(j, 'j', KM1, 'a' + (i + 1)); });
+    W(j1, 'j', KM2, 'a3'); W(j2, 'j', KM2, 'a2'); W(j3, 'j', KM2, 'a1');
+    const j4 = J(80, 250), j5 = J(100, 260), j6 = J(120, 270);
+    [j4, j5, j6].forEach((j, i) => { W(KM1, 'b' + (i + 1), j, 'j'); W(j, 'j', F1, 'a' + (i + 1)); W(KM2, 'b' + (i + 1), j, 'j'); });
+    ['U1', 'V1', 'W1'].forEach((t, i) => W(F1, 'b' + (i + 1), M1, t));
+    W(X1, 'PE', M1, 'PE', [[140, 90], [260, 90], [260, 340], [140, 340]]);
+    // PLC alimentato a 24 V c.c.
+    const CPU = A('s7_1200', 560, 330, 'A1');
+    const T = id => termsW(CPU).find(t => t.id === id);
+    const DC = A('srcdc', T('Lp').x, T('Lp').y - 60);
+    W(DC, 'P', CPU, 'Lp'); W(DC, 'M', CPU, 'M');
+    // ingressi: pulsanti e contatti di ritorno, alimentati dal +24 V
+    const ins = [
+      ['I0.0', 'pb_no', 'S1'], ['I0.1', 'pb_nc', 'S0'], ['I0.2', 'olc_no', 'F1'],
+      ['I0.3', 'aux_no', 'KM1', { a: '13', b: '14' }], ['I0.4', 'pb_no', 'S2'], ['I0.5', 'aux_no', 'KM2', { a: '13', b: '14' }],
+    ];
+    // percorsi dei fili sfalsati: nessun tratto orizzontale si sovrappone o si incrocia con un altro
+    const lanes = (items, y0, dy) => {
+      const L = items.filter(it => it.x < it.tx).sort((a, b) => a.x - b.x), R = items.filter(it => it.x > it.tx).sort((a, b) => b.x - a.x);
+      [L, R].forEach(g => g.forEach((it, k) => { it.ym = y0 + dy * k; }));
+    };
+    const inItems = ins.map(([addr, type, nm, labels], i) => ({ addr, type, nm, labels, x: 470 + i * 70, tx: T('i_' + addr).x }));
+    lanes(inItems, T('i_I0.0').y - 14, -10);
+    for (const it of inItems) {
+      const P = A('src1', it.x, 140, '', { props: { pot: 'P' } }), dev = A(it.type, it.x, 200, it.nm, it.labels ? { labels: it.labels } : null);
+      W(P, 't', dev, 'a'); W(dev, 'b', CPU, 'i_' + it.addr, it.ym != null ? [[it.x, it.ym], [it.tx, it.ym]] : []);
+    }
+    // uscite: le bobine hanno anche l'interblocco elettrico con i contatti NC 21-22
+    const outs = [['Q0.0', 'coil', 'KM1', 'KM2'], ['Q0.1', 'coil', 'KM2', 'KM1'], ['Q0.2', 'lamp', 'H1', 'verde'], ['Q0.3', 'lamp', 'H2', 'rossa'], ['Q0.4', 'lamp', 'H3', 'bianca'], ['Q0.5', 'lamp', 'H4', 'gialla']];
+    const outItems = outs.map(([addr, type, nm, extra], i) => ({ addr, type, nm, extra, x: 450 + i * 80, tx: T('q_' + addr).x }));
+    lanes(outItems, T('q_Q0.0').y + 14, 10);
+    for (const { addr, type, nm, extra, x, tx, ym } of outItems) {
+      const route = ym != null ? [[tx, ym], [x, ym]] : [];
+      let y = 450, dev;
+      if (type === 'coil') {
+        const ilk = A('aux_nc', x, y, extra, { labels: { a: '21', b: '22' } });
+        W(CPU, 'q_' + addr, ilk, 'a', route);
+        dev = A(type, x, y + 70, nm); W(ilk, 'b', dev, 'a'); y += 70;
+      } else {
+        dev = A(type, x, y + 35, nm, { props: { color: extra } }); W(CPU, 'q_' + addr, dev, 'a', route); y += 35;
+      }
+      const M = A('src1', x, 580, '', { props: { pot: 'M' }, rot: 2 });
+      W(dev, 'b', M, 't');
+    }
+    Tx(60, 640, 'Ingressi: S1 avanti (I0.0), S0 arresto NC (I0.1), F1 97-98 relè termico (I0.2), KM1 13-14 (I0.3), S2 indietro (I0.4), KM2 13-14 (I0.5).', 11);
+    Tx(60, 660, 'Uscite: KM1 (Q0.0), KM2 (Q0.1), H1 verde pronto (Q0.2), H2 rossa avanti (Q0.3), H3 bianca indietro (Q0.4), H4 gialla termico (Q0.5).', 11);
+    Tx(60, 680, 'Il programma ladder è nel foglio “Programma”. Clic sulla CPU per passare da RUN a STOP, clic su F1 per far scattare il termico.', 11);
+    page('Programma');
+    A('lad_rail_l', 100, 100, '', { props: { rows: 8 } }); A('lad_rail_r', 520, 100, '', { props: { rows: 8 } });
+    // una riga: contatti in serie da x=120 (passo 40) e bobina sulla barra destra
+    const rung = (y, contacts, coil) => {
+      const cs = contacts.map(([type, addr], i) => A(type, 120 + i * 40, y, addr));
+      W(cs[cs.length - 1], 'r', A('lad_coil', 500, y, coil), 'l');
+    };
+    // Segmento 1: marcia avanti con autoritenuta e interblocco
+    const a0 = A('lad_no', 120, 100, 'I0.0');
+    const a1 = A('lad_no', 220, 100, 'I0.1'); A('lad_nc', 260, 100, 'I0.2'); const kb = A('lad_nc', 300, 100, 'Q0.1');
+    W(kb, 'r', A('lad_coil', 500, 100, 'Q0.0'), 'l');
+    A('lad_no', 120, 140, 'Q0.0'); const s2 = A('lad_no', 160, 140, 'I0.3');
+    W(a0, 'r', a1, 'l'); W(s2, 'r', a1, 'l', [[190, 140], [190, 100]]);
+    // Segmento 2: marcia indietro
+    const b0 = A('lad_no', 120, 180, 'I0.4');
+    const b1 = A('lad_no', 220, 180, 'I0.1'); A('lad_nc', 260, 180, 'I0.2'); const kc = A('lad_nc', 300, 180, 'Q0.0');
+    W(kc, 'r', A('lad_coil', 500, 180, 'Q0.1'), 'l');
+    A('lad_no', 120, 220, 'Q0.1'); const t2 = A('lad_no', 160, 220, 'I0.5');
+    W(b0, 'r', b1, 'l'); W(t2, 'r', b1, 'l', [[190, 220], [190, 180]]);
+    // Segmenti 3-6: segnalazioni
+    rung(260, [['lad_nc', 'Q0.0'], ['lad_nc', 'Q0.1'], ['lad_nc', 'I0.2']], 'Q0.2');
+    rung(300, [['lad_no', 'Q0.0']], 'Q0.3');
+    rung(340, [['lad_no', 'Q0.1']], 'Q0.4');
+    rung(380, [['lad_no', 'I0.2']], 'Q0.5');
+    const cm = [[100, 'Seg. 1 · KM1 marcia avanti'], [180, 'Seg. 2 · KM2 marcia indietro'], [260, 'Seg. 3 · L_VERDE pronto'], [300, 'Seg. 4 · L_ROSSA avanti'], [340, 'Seg. 5 · L_BIANCA indietro'], [380, 'Seg. 6 · L_GIALLA termico']];
+    for (const [y, t] of cm) Tx(540, y, t, 10);
+    Tx(100, 440, 'Tabella dei simboli', 12);
+    const sym = [['P_AVANTI', 'I0.0', 'pulsante marcia avanti (NA)'], ['P_STOP', 'I0.1', 'pulsante di arresto (NC: a riposo vale 1)'], ['TERMICA', 'I0.2', 'contatto 97-98 del relè termico (NA: vale 1 se scatta)'],
+      ['SICUREZZA_KM1', 'I0.3', 'contatto 13-14 di KM1 (conferma chiusura)'], ['P_INDIETRO', 'I0.4', 'pulsante marcia indietro (NA)'], ['SICUREZZA_KM2', 'I0.5', 'contatto 13-14 di KM2'],
+      ['KM1', 'Q0.0', 'bobina KM1 (avanti)'], ['KM2', 'Q0.1', 'bobina KM2 (indietro)'], ['L_VERDE', 'Q0.2', 'pronto'], ['L_ROSSA', 'Q0.3', 'marcia avanti'], ['L_BIANCA', 'Q0.4', 'marcia indietro'], ['L_GIALLA', 'Q0.5', 'intervento termico']];
+    sym.forEach(([n, a, c], i) => Tx(100, 470 + i * 20, `${a}   ${n} – ${c}`, 10));
   } else if (id === 'grafcet') {
     d.meta.title = 'GRAFCET: ciclo A+ A−';
     name('GRAFCET');
@@ -186,6 +272,7 @@ const EXAMPLES = [
   ['inversione', 'Inversione di marcia con interblocco'],
   ['stella', 'Avviamento stella-triangolo'],
   ['plc', 'PLC S7-1200: marcia e arresto in ladder'],
+  ['plcinv', 'PLC S7-1200: inversione di marcia in ladder'],
   ['grafcet', 'GRAFCET: ciclo A+ A− con cilindro'],
   ['logica', 'Porte logiche e contatore'],
   ['inverter', 'Motore con variatore di frequenza'],
